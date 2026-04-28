@@ -5,7 +5,7 @@ meta:
 	ADDON_TAGS = "texture" "sharing" "gpu" "syphon" "spout"
 
 common:
-	ADDON_INCLUDES = libs/nozzle/include libs/plog/include
+	ADDON_INCLUDES = libs/nozzle/include libs/nozzle/libs/plog/include
 
 osx:
 	ADDON_CFLAGS = -fno-exceptions -fno-rtti -DNOZZLE_HAS_METAL

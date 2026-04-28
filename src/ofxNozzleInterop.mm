@@ -1,8 +1,9 @@
 // ofxNozzleInterop.mm - IOSurface / OpenGL / Metal interop utilities
 
+#include "ofMain.h"
+
 #import <IOSurface/IOSurface.h>
 #import <Metal/Metal.h>
-#import <OpenGL/OpenGL.h>
 #import <OpenGL/CGLIOSurface.h>
 #import <AppKit/AppKit.h>
 
@@ -70,6 +71,16 @@ static uint32_t gl_format_to_nozzle_format(uint32_t gl_internal_format) {
         case GL_RGBA16F:   return 12; // rgba16_float
         default:           return 3; // fallback to rgba8_unorm
     }
+}
+
+static void release_mtl_texture(void *ptr) {
+    if (!ptr) return;
+#if __has_feature(objc_arc)
+    id obj = (__bridge_transfer id<MTLTexture>)ptr;
+    (void)obj;
+#else
+    [(id<MTLTexture>)ptr release];
+#endif
 }
 
 ofxNozzleInteropResources ofxNozzleCreateIOSurface(
@@ -173,7 +184,11 @@ void *ofxNozzleCreateMetalTextureFromIOSurface(
     }
 
     @autoreleasepool {
+#if __has_feature(objc_arc)
+        id<MTLDevice> device = (__bridge id<MTLDevice>)mtl_device;
+#else
         id<MTLDevice> device = (id<MTLDevice>)mtl_device;
+#endif
         IOSurfaceRef surface = (IOSurfaceRef)io_surface;
 
         auto mtl_format = nozzle_format_to_mtl(pixel_format);
@@ -198,7 +213,11 @@ void *ofxNozzleCreateMetalTextureFromIOSurface(
             return nullptr;
         }
 
+#if __has_feature(objc_arc)
+        return (__bridge_retained void *)texture;
+#else
         return (void *)texture;
+#endif
     }
 }
 
@@ -217,11 +236,9 @@ void ofxNozzleReleaseInteropResources(ofxNozzleInteropResources &resources) {
     }
 
     @autoreleasepool {
-        if (resources.mtl_texture) {
-            id<MTLTexture> texture = (id<MTLTexture>)resources.mtl_texture;
-            [texture release];
-            resources.mtl_texture = nullptr;
-        }
+        release_mtl_texture(resources.mtl_texture);
+        resources.mtl_texture = nullptr;
+
         if (resources.io_surface) {
             IOSurfaceRef surface = (IOSurfaceRef)resources.io_surface;
             CFRelease(surface);

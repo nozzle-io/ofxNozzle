@@ -8,10 +8,15 @@ common:
 	ADDON_INCLUDES = libs/nozzle/include libs/nozzle/libs/plog/include
 
 osx:
-	ADDON_CFLAGS = -fno-exceptions -fno-rtti -DNOZZLE_HAS_METAL
+	ADDON_DEFINES = NOZZLE_HAS_METAL
 	ADDON_LDFLAGS = -framework Metal -framework IOSurface -framework Foundation -framework OpenGL
 	ADDON_SOURCES_EXCLUDE = src/%.cpp
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/src/backends/d3d11/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/tests/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/examples/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/build/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/cmake/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/libs/plog/%
 	ADDON_SOURCES = src/ofxNozzleSender.mm
 	ADDON_SOURCES += src/ofxNozzleReceiver.mm
 	ADDON_SOURCES += src/ofxNozzleInterop.mm
@@ -29,10 +34,15 @@ osx:
 	ADDON_SOURCES += libs/nozzle/src/backends/metal/metal_sync.mm
 
 macos:
-	ADDON_CFLAGS = -fno-exceptions -fno-rtti -DNOZZLE_HAS_METAL
+	ADDON_DEFINES = NOZZLE_HAS_METAL
 	ADDON_LDFLAGS = -framework Metal -framework IOSurface -framework Foundation -framework OpenGL
 	ADDON_SOURCES_EXCLUDE = src/%.cpp
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/src/backends/d3d11/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/tests/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/examples/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/build/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/cmake/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/libs/plog/%
 	ADDON_SOURCES = src/ofxNozzleSender.mm
 	ADDON_SOURCES += src/ofxNozzleReceiver.mm
 	ADDON_SOURCES += src/ofxNozzleInterop.mm

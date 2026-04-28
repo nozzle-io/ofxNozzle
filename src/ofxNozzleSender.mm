@@ -1,9 +1,13 @@
 // ofxNozzleSender.mm - Sender: GL draw target → IOSurface → nozzle publish
 
+#ifndef NOZZLE_HAS_METAL
+#define NOZZLE_HAS_METAL
+#endif
+
+#include "ofMain.h"
+
 #import <Metal/Metal.h>
 #import <IOSurface/IOSurface.h>
-#import <OpenGL/CGLCurrent.h>
-#import <OpenGL/gl.h>
 
 #include "ofxNozzleSender.h"
 #include "ofxNozzleInterop.h"
@@ -13,8 +17,37 @@
 
 #include "ofLog.h"
 #include "ofAppRunner.h"
-#include "ofWindow.h"
+#include "ofAppGLFWWindow.h"
 #include "GLFW/glfw3.h"
+
+namespace {
+
+void release_objc_ptr(void *ptr) {
+#if __has_feature(objc_arc)
+    if (ptr) {
+        id obj = (__bridge_transfer id)ptr;
+        (void)obj;
+    }
+#else
+    if (ptr) {
+        [(id)ptr release];
+    }
+#endif
+}
+
+void *retain_objc_ptr(void *ptr) {
+#if __has_feature(objc_arc)
+    if (ptr) {
+        id obj = (__bridge id)ptr;
+        return (__bridge_retained void *)obj;
+    }
+    return ptr;
+#else
+    return ptr;
+#endif
+}
+
+} // namespace
 
 struct ofxNozzleSender::Impl {
     std::string name_{};
@@ -49,10 +82,8 @@ struct ofxNozzleSender::Impl {
             fbo_id_ = 0;
         }
 
-        if (mtl_device_) {
-            [(id<MTLDevice>)mtl_device_ release];
-            mtl_device_ = nullptr;
-        }
+        release_objc_ptr(mtl_device_);
+        mtl_device_ = nullptr;
 
         ofxNozzleReleaseInteropResources(interop_);
     }
@@ -124,7 +155,7 @@ bool ofxNozzleSender::setup(
         return false;
     }
 
-    // 4. Create Metal device
+    // 4. Create Metal device (retain for long-term storage as void*)
     @autoreleasepool {
         id<MTLDevice> device = MTLCreateSystemDefaultDevice();
         if (!device) {
@@ -135,7 +166,11 @@ bool ofxNozzleSender::setup(
             impl_.reset();
             return false;
         }
+#if __has_feature(objc_arc)
+        impl_->mtl_device_ = (__bridge_retained void *)device;
+#else
         impl_->mtl_device_ = (void *)device;
+#endif
     }
 
     // 5. Create Metal texture from same IOSurface
@@ -146,7 +181,7 @@ bool ofxNozzleSender::setup(
         impl_->interop_.pixel_format);
     if (!mtl_tex) {
         ofLogError("ofxNozzleSender") << "failed to create Metal texture from IOSurface";
-        [(id<MTLDevice>)impl_->mtl_device_ release];
+        release_objc_ptr(impl_->mtl_device_);
         impl_->mtl_device_ = nullptr;
         glDeleteFramebuffers(1, &impl_->fbo_id_);
         impl_->fbo_id_ = 0;
@@ -167,8 +202,8 @@ bool ofxNozzleSender::setup(
     auto tex_result = bbb::nozzle::metal::wrap_texture(wrap_desc);
     if (!tex_result.ok()) {
         ofLogError("ofxNozzleSender") << "wrap_texture failed: " << tex_result.error().message;
-        [(id<MTLTexture>)mtl_tex release];
-        [(id<MTLDevice>)impl_->mtl_device_ release];
+        release_objc_ptr(mtl_tex);
+        release_objc_ptr(impl_->mtl_device_);
         impl_->mtl_device_ = nullptr;
         glDeleteFramebuffers(1, &impl_->fbo_id_);
         impl_->fbo_id_ = 0;
@@ -180,7 +215,7 @@ bool ofxNozzleSender::setup(
 
     // 7. Create nozzle sender
     std::string app_name = "openFrameworks";
-    ofWindow *win = ofGetWindowPtr();
+    ofAppBaseWindow *win = ofGetWindowPtr();
     if (win) {
         GLFWwindow *window = (GLFWwindow *)win->getWindowContext();
         if (window) {
@@ -200,8 +235,8 @@ bool ofxNozzleSender::setup(
     if (!sender_result.ok()) {
         ofLogError("ofxNozzleSender") << "sender::create failed: " << sender_result.error().message;
         impl_->nozzle_texture_ = bbb::nozzle::texture{};
-        [(id<MTLTexture>)mtl_tex release];
-        [(id<MTLDevice>)impl_->mtl_device_ release];
+        release_objc_ptr(mtl_tex);
+        release_objc_ptr(impl_->mtl_device_);
         impl_->mtl_device_ = nullptr;
         glDeleteFramebuffers(1, &impl_->fbo_id_);
         impl_->fbo_id_ = 0;
@@ -228,11 +263,9 @@ void ofxNozzleSender::begin() {
         return;
     }
 
-    // Save current GL state
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &impl_->saved_fbo_);
     glGetIntegerv(GL_VIEWPORT, impl_->saved_viewport);
 
-    // Bind our FBO and set viewport
     glBindFramebuffer(GL_FRAMEBUFFER, impl_->fbo_id_);
     glViewport(0, 0, impl_->width_, impl_->height_);
 }
@@ -243,7 +276,6 @@ void ofxNozzleSender::end() {
         return;
     }
 
-    // Restore previous GL state
     glBindFramebuffer(GL_FRAMEBUFFER, impl_->saved_fbo_);
     glViewport(
         impl_->saved_viewport[0],
@@ -258,7 +290,6 @@ bool ofxNozzleSender::publish() {
         return false;
     }
 
-    // glFlush to ensure GL drawing is complete before Metal reads the IOSurface
     glFlush();
 
     auto result = impl_->sender_.publish_external_texture(impl_->nozzle_texture_);

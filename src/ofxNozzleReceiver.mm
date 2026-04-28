@@ -1,7 +1,12 @@
 // ofxNozzleReceiver.mm - Receiver: nozzle frame → IOSurface → GL texture → ofTexture
 
+#ifndef NOZZLE_HAS_METAL
+#define NOZZLE_HAS_METAL
+#endif
+
+#include "ofMain.h"
+
 #import <IOSurface/IOSurface.h>
-#import <OpenGL/CGLCurrent.h>
 #import <OpenGL/CGLIOSurface.h>
 
 #include "ofxNozzleReceiver.h"
@@ -126,33 +131,35 @@ struct ofxNozzleReceiver::Impl {
             gl_texture_cache_[surface_id] = gl_tex;
         }
 
-        // Update ofTexture
-        ofTextureData tex_data(
-            gl_tex,
-            GL_TEXTURE_RECTANGLE_ARB,
-            new_width, new_height,
-            gl_internal_format,
-            gl_format,
-            gl_type,
-            true);
-        tex_data.tex_0_target = GL_TEXTURE_RECTANGLE_ARB;
-
+        // Update ofTexture using setUseExternalTextureID pattern
         if (current_iosurface_id_ != surface_id ||
             current_width_ != new_width ||
             current_height_ != new_height) {
             texture_.clear();
-            texture_.setTextureData(tex_data);
-            texture_.setTextureWrap(GL_CLAMP_TO_EDGE);
-            texture_.setTextureMinMagFilter(GL_LINEAR);
-            texture_.setUseExternalTextureID(true);
+            texture_.setUseExternalTextureID(gl_tex);
+            auto &td = texture_.texData;
+            td.textureTarget = GL_TEXTURE_RECTANGLE_ARB;
+            td.width = static_cast<float>(new_width);
+            td.height = static_cast<float>(new_height);
+            td.tex_w = static_cast<float>(new_width);
+            td.tex_h = static_cast<float>(new_height);
+            td.glInternalFormat = gl_internal_format;
+            texture_.setTextureWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+            texture_.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
             current_iosurface_id_ = surface_id;
             current_width_ = new_width;
             current_height_ = new_height;
         } else {
-            // Same surface — just mark the texture as needing upload
-            // (the IOSurface content has changed, GL will see it automatically)
-            texture_.setTextureData(tex_data);
-            texture_.setUseExternalTextureID(true);
+            // Same surface — IOSurface content has changed, GL sees it automatically.
+            // Just ensure the texture ID is current.
+            texture_.setUseExternalTextureID(gl_tex);
+            auto &td = texture_.texData;
+            td.textureTarget = GL_TEXTURE_RECTANGLE_ARB;
+            td.width = static_cast<float>(new_width);
+            td.height = static_cast<float>(new_height);
+            td.tex_w = static_cast<float>(new_width);
+            td.tex_h = static_cast<float>(new_height);
+            td.glInternalFormat = gl_internal_format;
         }
 
         return true;
@@ -162,7 +169,7 @@ struct ofxNozzleReceiver::Impl {
 ofxNozzleReceiver::ofxNozzleReceiver() = default;
 ofxNozzleReceiver::~ofxNozzleReceiver() = default;
 ofxNozzleReceiver::ofxNozzleReceiver(ofxNozzleReceiver &&) noexcept = default;
-ofxNozzleReceiver &operator=(ofxNozzleReceiver &&) noexcept = default;
+ofxNozzleReceiver &ofxNozzleReceiver::operator=(ofxNozzleReceiver &&) noexcept = default;
 
 bool ofxNozzleReceiver::setup(const std::string &name, float timeoutMs) {
     if (impl_ && impl_->setup_) {

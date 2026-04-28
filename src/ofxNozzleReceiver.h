@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include <ofTexture.h>
+#include "ofTexture.h"
 
 class ofxNozzleReceiver {
 public:

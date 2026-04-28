@@ -11,10 +11,10 @@
 #include <bbb/nozzle/nozzle.hpp>
 #include <bbb/nozzle/backends/metal.hpp>
 
-#include <ofLog.h>
-#include <ofAppRunner.h>
-#include <ofWindow.h>
-#include <GLFW/glfw3.h>
+#include "ofLog.h"
+#include "ofAppRunner.h"
+#include "ofWindow.h"
+#include "GLFW/glfw3.h"
 
 struct ofxNozzleSender::Impl {
     std::string name_{};

@@ -10,7 +10,7 @@
 #include <bbb/nozzle/nozzle.hpp>
 #include <bbb/nozzle/backends/metal.hpp>
 
-#include <ofLog.h>
+#include "ofLog.h"
 
 #include <unordered_map>
 

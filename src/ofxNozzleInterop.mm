@@ -8,7 +8,7 @@
 
 #include "ofxNozzleInterop.h"
 
-#include <ofLog.h>
+#include "ofLog.h"
 
 static constexpr uint32_t kIOSurfaceAlignBytes = 64;
 

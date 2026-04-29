@@ -152,7 +152,7 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libdrm-dev libgbm-dev libegl-dev libgl-dev libglew-dev libcairo2-dev libfreeimage-dev libfreetype-dev libassimp-dev libpulse-dev libasound2-dev libglfw3-dev
+        run: sudo ./scripts/linux/ubuntu/install_dependencies.sh -y
 
       - name: Create test app
         run: |

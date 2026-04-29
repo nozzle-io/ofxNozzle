@@ -10,45 +10,117 @@ jobs:
   build-macos:
     runs-on: macos-14
     steps:
+      - name: Setup openFrameworks
+        uses: nandenjin/openframeworks-action@v1
+        with:
+          command: setup-of
+          of_version: "0.12.0"
+
       - uses: actions/checkout@v4
         with:
+          path: openFrameworks/addons/ofxNozzle
           submodules: recursive
 
-      - name: Clone openFrameworks
+      - name: Create test app
         run: |
-          git clone --depth=1 https://github.com/openframeworks/openFrameworks.git ~/openFrameworks
-          rm -rf ~/openFrameworks/addons/ofxNozzle
-          ln -s $(pwd) ~/openFrameworks/addons/ofxNozzle
+          mkdir -p openFrameworks/apps/devApps/ofxNozzleTest/src
+          cat > openFrameworks/apps/devApps/ofxNozzleTest/src/main.cpp << 'EOF'
+          #include "ofMain.h"
+          #include "ofApp.h"
+          int main() {
+            ofSetupOpenGL(100, 100, OF_WINDOW);
+            ofRunApp(new ofApp());
+          }
+          EOF
+          cat > openFrameworks/apps/devApps/ofxNozzleTest/src/ofApp.h << 'EOF'
+          #pragma once
+          #include "ofMain.h"
+          #include "ofxNozzle.h"
+          class ofApp : public ofBaseApp {
+          public:
+            void setup() override;
+            void draw() override;
+          private:
+            ofxNozzleSender sender;
+            ofxNozzleReceiver receiver;
+          };
+          EOF
+          cat > openFrameworks/apps/devApps/ofxNozzleTest/src/ofApp.cpp << 'EOF'
+          #include "ofApp.h"
+          void ofApp::setup() {}
+          void ofApp::draw() {}
+          EOF
+          echo "ofxNozzle" > openFrameworks/apps/devApps/ofxNozzleTest/addons.make
 
-      - name: Build addon sources (compile check)
-        run: |
-          cd ~/openFrameworks
-          # Compile addon source files to verify they build
-          find addons/ofxNozzle/src -name '*.mm' -o -name '*.cpp' | while read f; do
-            echo "Compiling: $f"
-            clang++ -std=c++17 -stdlib=libc++ -fno-exceptions -fno-rtti \
-              -I addons/ofxNozzle/libs/nozzle/include \
-              -I addons/ofxNozzle/libs/nozzle/libs/plog/include \
-              -DNOZZLE_HAS_METAL \
-              -framework Metal -framework IOSurface -framework Foundation \
-              -c "$f" -o /dev/null 2>&1 || true
-          done
-        continue-on-error: true
+      - name: Generate project
+        uses: nandenjin/openframeworks-action@v1
+        with:
+          command: projectgenerator
+          project_root: openFrameworks/apps/devApps/ofxNozzleTest
+
+      - name: Build
+        uses: nandenjin/openframeworks-action@v1
+        with:
+          command: build
+          project_root: openFrameworks/apps/devApps/ofxNozzleTest
 
   build-windows:
     runs-on: windows-2022
     steps:
+      - name: Setup openFrameworks
+        uses: nandenjin/openframeworks-action@v1
+        with:
+          command: setup-of
+          of_version: "0.12.0"
+
       - uses: actions/checkout@v4
         with:
+          path: openFrameworks/addons/ofxNozzle
           submodules: recursive
 
-      - name: Verify addon structure
+      - name: Create test app
         shell: bash
         run: |
-          test -f addon_config.mk || { echo "Missing addon_config.mk"; exit 1; }
-          test -f src/ofxNozzle.h || { echo "Missing ofxNozzle.h"; exit 1; }
-          test -d libs/nozzle/src || { echo "Missing nozzle submodule"; exit 1; }
-          echo "Addon structure OK"
+          mkdir -p openFrameworks/apps/devApps/ofxNozzleTest/src
+          cat > openFrameworks/apps/devApps/ofxNozzleTest/src/main.cpp << 'EOF'
+          #include "ofMain.h"
+          #include "ofApp.h"
+          int main() {
+            ofSetupOpenGL(100, 100, OF_WINDOW);
+            ofRunApp(new ofApp());
+          }
+          EOF
+          cat > openFrameworks/apps/devApps/ofxNozzleTest/src/ofApp.h << 'EOF'
+          #pragma once
+          #include "ofMain.h"
+          #include "ofxNozzle.h"
+          class ofApp : public ofBaseApp {
+          public:
+            void setup() override;
+            void draw() override;
+          private:
+            ofxNozzleSender sender;
+            ofxNozzleReceiver receiver;
+          };
+          EOF
+          cat > openFrameworks/apps/devApps/ofxNozzleTest/src/ofApp.cpp << 'EOF'
+          #include "ofApp.h"
+          void ofApp::setup() {}
+          void ofApp::draw() {}
+          EOF
+          echo "ofxNozzle" > openFrameworks/apps/devApps/ofxNozzleTest/addons.make
+
+      - name: Generate project
+        uses: nandenjin/openframeworks-action@v1
+        with:
+          command: projectgenerator
+          project_root: openFrameworks/apps/devApps/ofxNozzleTest
+
+      - name: Build
+        uses: nandenjin/openframeworks-action@v1
+        with:
+          command: build
+          project_root: openFrameworks/apps/devApps/ofxNozzleTest
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -60,20 +132,16 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get update && sudo apt-get install -y libdrm-dev libgbm-dev libegl-dev libgl-dev
 
-      - name: Verify Linux source files exist
+      - name: Compile addon sources
         run: |
-          test -f src/ofxNozzleSender_linux.cpp || { echo "Missing Linux sender"; exit 1; }
-          test -f src/ofxNozzleReceiver_linux.cpp || { echo "Missing Linux receiver"; exit 1; }
-          echo "Linux sources OK"
-
-      - name: Compile check Linux sources
-        run: |
-          find src -name '*_linux.cpp' | while read f; do
-            echo "Compiling: $f"
+          FAIL=0
+          for f in $(find src/platform/linux -name '*.cpp' 2>/dev/null); do
+            echo "=== Compiling: $f ==="
             g++ -std=c++17 -fPIC -fno-exceptions -fno-rtti \
               -I libs/nozzle/include \
               -I libs/nozzle/libs/plog/include \
+              -I src \
               -DNOZZLE_HAS_DMA_BUF \
-              -c "$f" -o /dev/null 2>&1 || true
+              -c "$f" -o /dev/null || { echo "FAILED: $f"; FAIL=1; }
           done
-        continue-on-error: true
+          exit $FAIL

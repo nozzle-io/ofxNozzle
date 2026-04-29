@@ -7,7 +7,6 @@ meta:
 common:
 	ADDON_INCLUDES = src libs/nozzle/include libs/nozzle/libs/plog/include
 
-# macOS (uses Metal/IOSurface backend + Objective-C++ interop)
 osx:
 	ADDON_DEFINES = NOZZLE_HAS_METAL NOZZLE_HAS_OPENGL
 	ADDON_LDFLAGS = -framework Metal -framework IOSurface -framework Foundation -framework OpenGL
@@ -21,7 +20,6 @@ osx:
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/cmake/%
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/libs/plog/%
 
-# Windows (uses D3D11 backend)
 vs:
 	ADDON_DEFINES = NOZZLE_HAS_D3D11 NOZZLE_HAS_OPENGL
 	ADDON_LDFLAGS = opengl32.lib d3d11.lib dxgi.lib bcrypt.lib
@@ -46,7 +44,6 @@ msys2:
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/cmake/%
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/libs/plog/%
 
-# Linux (uses DMA-BUF backend)
 linux64:
 	ADDON_DEFINES = NOZZLE_HAS_DMA_BUF NOZZLE_HAS_OPENGL
 	ADDON_LDFLAGS = -lEGL -lgbm -ldrm -lGL

@@ -56,7 +56,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: libs/openFrameworksCompiled
-          key: of-0.12.0-macos-v1
+          key: of-0.12.0-macos-v2
 
       - name: Generate project
         uses: nandenjin/openframeworks-action@v1
@@ -120,7 +120,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: libs/openFrameworksCompiled
-          key: of-0.12.0-windows-v1
+          key: of-0.12.0-windows-v2
 
       - name: Generate project
         uses: nandenjin/openframeworks-action@v1
@@ -132,10 +132,11 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build
-        uses: nandenjin/openframeworks-action@v1
-        with:
-          command: build
-          project_root: apps/devApps/ofxNozzleTest
+        shell: bash
+        run: |
+          msbuild apps/devApps/ofxNozzleTest/ofxNozzleTest.sln \
+            /p:configuration=release /maxCpuCount \
+            "/p:PreprocessorDefinitions=NOZZLE_HAS_D3D11;NOZZLE_HAS_OPENGL;%(PreprocessorDefinitions)"
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -209,7 +210,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: libs/openFrameworksCompiled
-          key: of-0.12.0-linux-v1
+          key: of-0.12.0-linux-v2
 
       - name: Generate Makefile
         run: |
@@ -220,6 +221,7 @@ jobs:
           ifndef OF_ROOT
           	OF_ROOT=../../..
           endif
+          PROJECT_DEFINES = NOZZLE_HAS_DMA_BUF NOZZLE_HAS_OPENGL
           include $(OF_ROOT)/libs/openFrameworksCompiled/project/makefileCommon/compile.project.mk
           MAKEFILE
 

@@ -44,6 +44,7 @@ jobs:
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/libs/plog/include \
               -I openFrameworks/addons/ofxNozzle/src \
               $OF_INC \
+              -DTARGET_OSX \
               -DNOZZLE_HAS_METAL \
               -c "$f" -o /dev/null || { echo "FAILED: $f"; FAIL=1; }
           done
@@ -88,6 +89,7 @@ jobs:
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/libs/plog/include \
               -I openFrameworks/addons/ofxNozzle/src \
               $OF_INC \
+              -DTARGET_WIN32 \
               -DNOZZLE_HAS_D3D11 \
               "$f" -o NUL || { echo "FAILED: $f"; FAIL=1; }
           done
@@ -108,7 +110,7 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libdrm-dev libgbm-dev libegl-dev libgl-dev libglew-dev
+        run: sudo apt-get update && sudo apt-get install -y libdrm-dev libgbm-dev libegl-dev libgl-dev libglew-dev libcairo2-dev
 
       - name: Compile addon sources
         run: |
@@ -131,6 +133,7 @@ jobs:
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/libs/plog/include \
               -I openFrameworks/addons/ofxNozzle/src \
               $OF_INC \
+              -DTARGET_LINUX \
               -DNOZZLE_HAS_DMA_BUF \
               -c "$f" -o /dev/null || { echo "FAILED: $f"; FAIL=1; }
           done

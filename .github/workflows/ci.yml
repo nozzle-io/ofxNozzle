@@ -221,7 +221,7 @@ jobs:
           ifndef OF_ROOT
           	OF_ROOT=../../..
           endif
-          PROJECT_DEFINES = NOZZLE_HAS_DMA_BUF NOZZLE_HAS_OPENGL
+          PROJECT_DEFINES = NOZZLE_PLATFORM_LINUX=1 NOZZLE_HAS_DMA_BUF=1 NOZZLE_HAS_OPENGL=1
           include $(OF_ROOT)/libs/openFrameworksCompiled/project/makefileCommon/compile.project.mk
           MAKEFILE
 

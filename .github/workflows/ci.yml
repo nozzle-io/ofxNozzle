@@ -132,11 +132,9 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build
-        shell: bash
+        shell: pwsh
         run: |
-          msbuild apps/devApps/ofxNozzleTest/ofxNozzleTest.sln \
-            /p:configuration=release /maxCpuCount \
-            "/p:PreprocessorDefinitions=NOZZLE_HAS_D3D11;NOZZLE_HAS_OPENGL;%(PreprocessorDefinitions)"
+          msbuild apps/devApps/ofxNozzleTest/ofxNozzleTest.sln /p:configuration=release /maxCpuCount "/p:PreprocessorDefinitions=NOZZLE_HAS_D3D11;NOZZLE_HAS_OPENGL;%(PreprocessorDefinitions)"
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -161,6 +159,7 @@ jobs:
             libxxf86vm-dev libx11-dev x11proto-dev \
             libgl-dev libglew-dev freeglut3-dev libglu1-mesa-dev \
             libglfw3-dev \
+            libcurl4-openssl-dev \
             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
             gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
             gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-pulseaudio \

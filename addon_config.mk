@@ -17,7 +17,7 @@ osx:
 	ADDON_CFLAGS = -DNOZZLE_PLATFORM_MACOS=1
 	ADDON_CFLAGS += -DNOZZLE_HAS_METAL=1
 	ADDON_CFLAGS += -DNOZZLE_HAS_OPENGL=1
-	ADDON_LDFLAGS = -framework Metal -framework IOSurface -framework Foundation -framework OpenGL
+	ADDON_FRAMEWORKS = Metal IOSurface Foundation OpenGL
 	ADDON_SOURCES_EXCLUDE += src/platform/win/%
 	ADDON_SOURCES_EXCLUDE += src/platform/linux/%
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/src/backends/d3d11/%
@@ -101,6 +101,7 @@ emscripten:
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/src/backends/d3d11/%
 
 ios:
+	ADDON_FRAMEWORKS = Metal IOSurface Foundation
 	ADDON_SOURCES_EXCLUDE += src/platform/win/%
 	ADDON_SOURCES_EXCLUDE += src/platform/linux/%
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/src/backends/d3d11/%

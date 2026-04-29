@@ -25,10 +25,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: of_root/libs/openFrameworksCompiled
-          key: of-0.12.0-macos-v5
+          key: of-0.12.0-macos-v6
 
       - name: Build testApp
         run: make -j$(sysctl -n hw.ncpu)
+        working-directory: of_root/addons/ofxNozzle/testApp
+
+      - name: Run testApp
+        run: ./bin/testApp
         working-directory: of_root/addons/ofxNozzle/testApp
 
   build-linux:
@@ -74,10 +78,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: of_root/libs/openFrameworksCompiled
-          key: of-0.12.0-linux-v5
+          key: of-0.12.0-linux-v6
 
       - name: Build testApp
         run: make -j$(nproc)
+        working-directory: of_root/addons/ofxNozzle/testApp
+
+      - name: Run testApp
+        run: xvfb-run ./bin/testApp
         working-directory: of_root/addons/ofxNozzle/testApp
 
   build-windows:
@@ -99,7 +107,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: of_root/libs/openFrameworksCompiled
-          key: of-0.12.0-windows-v5
+          key: of-0.12.0-windows-v6
 
       - name: Generate project
         shell: pwsh
@@ -128,3 +136,8 @@ jobs:
         shell: pwsh
         run: |
           msbuild "of_root\addons\ofxNozzle\testApp\testApp.vcxproj" /p:configuration=release /p:platform=x64 /maxCpuCount
+
+      - name: Run testApp
+        shell: pwsh
+        run: |
+          & "of_root\addons\ofxNozzle\testApp\bin\testApp.exe"

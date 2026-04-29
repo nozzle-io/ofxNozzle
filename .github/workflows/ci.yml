@@ -192,7 +192,7 @@ jobs:
           key: of-0.12.0-linux-v1
 
       - name: Debug oF directory structure
-        run: ls -la libs/ && ls -la libs/openFrameworksCompiled/ 2>&1 || echo "libs/openFrameworksCompiled/ does not exist"
+        run: ls -la libs/openFrameworksCompiled/project/ && find libs/openFrameworksCompiled/project/ -name "verify*" 2>&1
 
       - name: Generate Makefile
         run: |

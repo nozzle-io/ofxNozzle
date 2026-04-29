@@ -128,6 +128,9 @@ jobs:
           command: projectgenerator
           project_root: apps/devApps/ofxNozzleTest
 
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
       - name: Build
         uses: nandenjin/openframeworks-action@v1
         with:

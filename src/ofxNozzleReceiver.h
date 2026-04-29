@@ -5,6 +5,10 @@
 
 #include "ofTexture.h"
 
+#ifndef GL_BGRA8_EXT
+#define GL_BGRA8_EXT 0x93A1
+#endif
+
 class ofxNozzleReceiver {
 public:
     ofxNozzleReceiver();

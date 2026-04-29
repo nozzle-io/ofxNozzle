@@ -197,7 +197,7 @@ jobs:
           ifneq ($(wildcard config.make),)
           include config.make
           endif
-          include ../../../../libs/openFrameworksCompiled/project/makefileCommon/verify.ofroot.mk
+          include ../../../libs/openFrameworksCompiled/project/makefileCommon/verify.ofroot.mk
           MAKEFILE
           # Strip leading whitespace (Make requires include at column 0)
           sed -i 's/^[[:space:]]*//' apps/devApps/ofxNozzleTest/Makefile

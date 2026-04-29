@@ -132,10 +132,7 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build
-        uses: nandenjin/openframeworks-action@v1
-        with:
-          command: build
-          project_root: apps/devApps/ofxNozzleTest
+        run: msbuild apps/devApps/ofxNozzleTest/ofxNozzleTest.sln /p:configuration=release /maxCpuCount "/p:AdditionalOptions=/DNOZZLE_HAS_D3D11 /DNOZZLE_HAS_OPENGL"
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -155,6 +152,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            libunwind-dev \
             libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
             libgl-dev libglew-dev libglfw3-dev \
             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \

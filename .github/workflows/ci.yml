@@ -23,8 +23,16 @@ jobs:
 
       - name: Compile addon sources
         run: |
+          OF_INC=""
+          for d in $(find libs -type d -name include 2>/dev/null); do
+            OF_INC="$OF_INC -I $d"
+            for sd in "$d"/*/; do
+              [ -d "$sd" ] && OF_INC="$OF_INC -I ${sd%/}"
+            done
+          done
+
           FAIL=0
-          for f in $(find openFrameworks/addons/ofxNozzle/src/platform/macos -name '*.mm' -o -name '*.cpp' 2>/dev/null); do
+          for f in $(find openFrameworks/addons/ofxNozzle/src/platform/macos \( -name '*.mm' -o -name '*.cpp' \) 2>/dev/null); do
             echo "=== Compiling: $f ==="
             clang++ -std=c++17 -fPIC \
               -x objective-c++ -fobjc-arc \
@@ -32,27 +40,7 @@ jobs:
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/include \
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/libs/plog/include \
               -I openFrameworks/addons/ofxNozzle/src \
-              -I libs/openFrameworks \
-              -I libs/openFrameworks/utils \
-              -I libs/openFrameworks/types \
-              -I libs/openFrameworks/events \
-              -I libs/openFrameworks/gl \
-              -I libs/openFrameworks/graphics \
-              -I libs/openFrameworks/math \
-              -I libs/openFrameworks/3d \
-              -I libs/openFrameworks/app \
-              -I libs/openFrameworks/communication \
-              -I libs/openFrameworks/sound \
-              -I libs/openFrameworks/video \
-              -I libs/glew/include \
-              -I libs/glfw/include \
-              -I libs/glm/include \
-              -I libs/json/include \
-              -I libs/pugixml/include \
-              -I libs/tess2/include \
-              -I libs/utf8/include \
-              -I libs/boost/include \
-              -I libs/freetype/include/freetype2 \
+              $OF_INC \
               -DNOZZLE_HAS_METAL \
               -c "$f" -o /dev/null || { echo "FAILED: $f"; FAIL=1; }
           done
@@ -78,6 +66,14 @@ jobs:
       - name: Compile addon sources
         shell: bash
         run: |
+          OF_INC=""
+          for d in $(find libs -type d -name include 2>/dev/null); do
+            OF_INC="$OF_INC -I $d"
+            for sd in "$d"/*/; do
+              [ -d "$sd" ] && OF_INC="$OF_INC -I ${sd%/}"
+            done
+          done
+
           FAIL=0
           for f in $(find openFrameworks/addons/ofxNozzle/src/platform/win -name '*.cpp' 2>/dev/null); do
             echo "=== Compiling: $f ==="
@@ -85,27 +81,7 @@ jobs:
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/include \
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/libs/plog/include \
               -I openFrameworks/addons/ofxNozzle/src \
-              -I libs/openFrameworks \
-              -I libs/openFrameworks/utils \
-              -I libs/openFrameworks/types \
-              -I libs/openFrameworks/events \
-              -I libs/openFrameworks/gl \
-              -I libs/openFrameworks/graphics \
-              -I libs/openFrameworks/math \
-              -I libs/openFrameworks/3d \
-              -I libs/openFrameworks/app \
-              -I libs/openFrameworks/communication \
-              -I libs/openFrameworks/sound \
-              -I libs/openFrameworks/video \
-              -I libs/glew/include \
-              -I libs/glfw/include \
-              -I libs/glm/include \
-              -I libs/json/include \
-              -I libs/pugixml/include \
-              -I libs/tess2/include \
-              -I libs/utf8/include \
-              -I libs/boost/include \
-              -I libs/freetype/include/freetype2 \
+              $OF_INC \
               -DNOZZLE_HAS_D3D11 \
               "$f" -o NUL || { echo "FAILED: $f"; FAIL=1; }
           done
@@ -130,6 +106,14 @@ jobs:
 
       - name: Compile addon sources
         run: |
+          OF_INC=""
+          for d in $(find libs -type d -name include 2>/dev/null); do
+            OF_INC="$OF_INC -I $d"
+            for sd in "$d"/*/; do
+              [ -d "$sd" ] && OF_INC="$OF_INC -I ${sd%/}"
+            done
+          done
+
           FAIL=0
           for f in $(find openFrameworks/addons/ofxNozzle/src/platform/linux -name '*.cpp' 2>/dev/null); do
             echo "=== Compiling: $f ==="
@@ -137,27 +121,7 @@ jobs:
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/include \
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/libs/plog/include \
               -I openFrameworks/addons/ofxNozzle/src \
-              -I libs/openFrameworks \
-              -I libs/openFrameworks/utils \
-              -I libs/openFrameworks/types \
-              -I libs/openFrameworks/events \
-              -I libs/openFrameworks/gl \
-              -I libs/openFrameworks/graphics \
-              -I libs/openFrameworks/math \
-              -I libs/openFrameworks/3d \
-              -I libs/openFrameworks/app \
-              -I libs/openFrameworks/communication \
-              -I libs/openFrameworks/sound \
-              -I libs/openFrameworks/video \
-              -I libs/glew/include \
-              -I libs/glfw/include \
-              -I libs/glm/include \
-              -I libs/json/include \
-              -I libs/pugixml/include \
-              -I libs/tess2/include \
-              -I libs/utf8/include \
-              -I libs/boost/include \
-              -I libs/freetype/include/freetype2 \
+              $OF_INC \
               -DNOZZLE_HAS_DMA_BUF \
               -c "$f" -o /dev/null || { echo "FAILED: $f"; FAIL=1; }
           done

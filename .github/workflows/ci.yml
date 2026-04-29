@@ -56,7 +56,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: libs/openFrameworksCompiled
-          key: of-0.12.0-macos-v2
+          key: of-0.12.0-macos-v3
 
       - name: Generate project
         uses: nandenjin/openframeworks-action@v1
@@ -120,7 +120,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: libs/openFrameworksCompiled
-          key: of-0.12.0-windows-v2
+          key: of-0.12.0-windows-v3
 
       - name: Generate project
         uses: nandenjin/openframeworks-action@v1
@@ -128,13 +128,11 @@ jobs:
           command: projectgenerator
           project_root: apps/devApps/ofxNozzleTest
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
       - name: Build
-        shell: pwsh
-        run: |
-          msbuild apps/devApps/ofxNozzleTest/ofxNozzleTest.sln /p:configuration=release /maxCpuCount "/p:PreprocessorDefinitions=NOZZLE_HAS_D3D11;NOZZLE_HAS_OPENGL;%(PreprocessorDefinitions)"
+        uses: nandenjin/openframeworks-action@v1
+        with:
+          command: build
+          project_root: apps/devApps/ofxNozzleTest
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -209,7 +207,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: libs/openFrameworksCompiled
-          key: of-0.12.0-linux-v2
+          key: of-0.12.0-linux-v3
 
       - name: Generate Makefile
         run: |

@@ -30,6 +30,9 @@ jobs:
               [ -d "$sd" ] && OF_INC="$OF_INC -I ${sd%/}"
             done
           done
+          for d in $(find libs/openFrameworks -maxdepth 1 -type d 2>/dev/null); do
+            OF_INC="$OF_INC -I $d"
+          done
 
           FAIL=0
           for f in $(find openFrameworks/addons/ofxNozzle/src/platform/macos \( -name '*.mm' -o -name '*.cpp' \) 2>/dev/null); do
@@ -73,6 +76,9 @@ jobs:
               [ -d "$sd" ] && OF_INC="$OF_INC -I ${sd%/}"
             done
           done
+          for d in $(find libs/openFrameworks -maxdepth 1 -type d 2>/dev/null); do
+            OF_INC="$OF_INC -I $d"
+          done
 
           FAIL=0
           for f in $(find openFrameworks/addons/ofxNozzle/src/platform/win -name '*.cpp' 2>/dev/null); do
@@ -112,6 +118,9 @@ jobs:
             for sd in "$d"/*/; do
               [ -d "$sd" ] && OF_INC="$OF_INC -I ${sd%/}"
             done
+          done
+          for d in $(find libs/openFrameworks -maxdepth 1 -type d 2>/dev/null); do
+            OF_INC="$OF_INC -I $d"
           done
 
           FAIL=0

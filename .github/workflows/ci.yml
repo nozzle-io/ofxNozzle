@@ -152,7 +152,18 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies
-        run: sudo ./scripts/linux/ubuntu/install_dependencies.sh -y
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev \
+            libgl-dev libglew-dev libglfw3-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-pulseaudio \
+            libcairo2-dev libfreeimage-dev libfreetype-dev libassimp-dev \
+            libpulse-dev libasound2-dev libmpg123-dev liburiparser-dev \
+            libdrm-dev libgbm-dev libegl-dev \
+            cmake gdb
 
       - name: Create test app
         run: |

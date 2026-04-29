@@ -5,7 +5,7 @@ meta:
 	ADDON_TAGS = "texture" "sharing" "gpu" "syphon" "spout"
 
 common:
-	ADDON_INCLUDES = src libs/nozzle/include libs/nozzle/libs/plog/include
+	ADDON_INCLUDES = src libs/nozzle/include libs/nozzle/libs/plog/include libs/nozzle/src
 	ADDON_SOURCES_EXCLUDE = libs/nozzle/tests/%
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/examples/%
 	ADDON_SOURCES_EXCLUDE += libs/nozzle/build/%

@@ -46,7 +46,28 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies
-        run: sudo ./of_root/scripts/linux/ubuntu/install_dependencies.sh -y
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libunwind-dev \
+            libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libxmu-dev \
+            libxxf86vm-dev libx11-dev x11proto-dev \
+            libgl-dev libglew-dev freeglut3-dev libglu1-mesa-dev \
+            libglfw3-dev \
+            libcurl4-openssl-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-pulseaudio \
+            gstreamer1.0-alsa gstreamer1.0-x \
+            libcairo2-dev libfreeimage-dev libfreetype6-dev libssl-dev \
+            libpulse-dev libasound2-dev libmpg123-dev liburiparser-dev \
+            libsndfile1-dev libopenal-dev \
+            libassimp-dev libpugixml-dev \
+            libdrm-dev libgbm-dev libegl-dev \
+            libjack-jackd2-dev librtaudio-dev \
+            libwayland-dev wayland-protocols libxkbcommon-dev libxkbcommon-x11-dev \
+            libraw1394-dev libudev-dev libusb-1.0-0-dev \
+            cmake gdb
 
       - name: Cache oF build
         uses: actions/cache@v4

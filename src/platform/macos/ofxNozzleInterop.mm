@@ -2,6 +2,10 @@
 
 #include "ofMain.h"
 
+#ifndef GL_BGRA8_EXT
+#define GL_BGRA8_EXT 0x93A1
+#endif
+
 #import <IOSurface/IOSurface.h>
 #import <Metal/Metal.h>
 #import <OpenGL/CGLIOSurface.h>

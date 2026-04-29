@@ -1,6 +1,6 @@
 # ofxNozzle
 
-openFrameworks addon for GPU texture sharing via [nozzle](https://github.com/2bbb/nozzle) — a cross-platform alternative to Syphon (macOS) and Spout (Windows).
+openFrameworks addon for GPU texture sharing via [nozzle](https://github.com/nozzle-io/nozzle) — a cross-platform alternative to Syphon (macOS) and Spout (Windows).
 
 Shares textures between processes on the same machine using IOSurface-backed Metal/OpenGL interop on macOS.
 

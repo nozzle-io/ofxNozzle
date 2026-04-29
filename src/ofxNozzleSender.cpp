@@ -14,8 +14,8 @@
 
 #include "ofxNozzleSender.h"
 
-#include <bbb/nozzle/nozzle.hpp>
-#include <bbb/nozzle/backends/d3d11.hpp>
+#include <nozzle/nozzle.hpp>
+#include <nozzle/backends/d3d11.hpp>
 
 #include "ofLog.h"
 
@@ -33,7 +33,7 @@ struct ofxNozzleSender::Impl {
     GLint saved_fbo_{0};
     GLint saved_viewport[4]{};
 
-    bbb::nozzle::sender sender_{};
+    nozzle::sender sender_{};
     std::vector<uint8_t> pixel_buffer_;
 
     ~Impl() {
@@ -46,7 +46,7 @@ struct ofxNozzleSender::Impl {
         }
         setup_ = false;
 
-        sender_ = bbb::nozzle::sender{};
+        sender_ = nozzle::sender{};
 
         if (gl_texture_ != 0) {
             glDeleteTextures(1, &gl_texture_);
@@ -62,12 +62,12 @@ struct ofxNozzleSender::Impl {
         pixel_buffer_.shrink_to_fit();
     }
 
-    static bbb::nozzle::texture_format gl_format_to_nozzle(uint32_t gl_format) {
+    static nozzle::texture_format gl_format_to_nozzle(uint32_t gl_format) {
         switch (gl_format) {
-            case GL_BGRA8_EXT: return bbb::nozzle::texture_format::bgra8_unorm;
-            case GL_RGBA8:     return bbb::nozzle::texture_format::rgba8_unorm;
-            case GL_RGBA16F:   return bbb::nozzle::texture_format::rgba16_float;
-            default:           return bbb::nozzle::texture_format::bgra8_unorm;
+            case GL_BGRA8_EXT: return nozzle::texture_format::bgra8_unorm;
+            case GL_RGBA8:     return nozzle::texture_format::rgba8_unorm;
+            case GL_RGBA16F:   return nozzle::texture_format::rgba16_float;
+            default:           return nozzle::texture_format::bgra8_unorm;
         }
     }
 
@@ -78,11 +78,11 @@ struct ofxNozzleSender::Impl {
         }
     }
 
-    static uint32_t nozzle_format_to_dxgi(bbb::nozzle::texture_format fmt) {
+    static uint32_t nozzle_format_to_dxgi(nozzle::texture_format fmt) {
         switch (fmt) {
-            case bbb::nozzle::texture_format::bgra8_unorm: return 87; // DXGI_FORMAT_B8G8R8A8_UNORM
-            case bbb::nozzle::texture_format::rgba8_unorm: return 28; // DXGI_FORMAT_R8G8B8A8_UNORM
-            case bbb::nozzle::texture_format::rgba16_float: return 10; // DXGI_FORMAT_R16G16B16A16_FLOAT
+            case nozzle::texture_format::bgra8_unorm: return 87; // DXGI_FORMAT_B8G8R8A8_UNORM
+            case nozzle::texture_format::rgba8_unorm: return 28; // DXGI_FORMAT_R8G8B8A8_UNORM
+            case nozzle::texture_format::rgba16_float: return 10; // DXGI_FORMAT_R16G16B16A16_FLOAT
             default: return 87; // DXGI_FORMAT_B8G8R8A8_UNORM
         }
     }
@@ -166,12 +166,12 @@ bool ofxNozzleSender::setup(
     impl_->pixel_buffer_.resize(
         static_cast<size_t>(width) * static_cast<size_t>(height) * bpp);
 
-    bbb::nozzle::sender_desc sender_desc{};
+    nozzle::sender_desc sender_desc{};
     sender_desc.name = name;
     sender_desc.application_name = "openFrameworks";
     sender_desc.ring_buffer_size = 3;
 
-    auto sender_result = bbb::nozzle::sender::create(sender_desc);
+    auto sender_result = nozzle::sender::create(sender_desc);
     if (!sender_result.ok()) {
         ofLogError("ofxNozzleSender") << "sender::create failed: "
             << sender_result.error().message;
@@ -240,7 +240,7 @@ bool ofxNozzleSender::publish() {
     glBindFramebuffer(GL_FRAMEBUFFER, impl_->saved_fbo_);
 
     auto nozzle_format = Impl::gl_format_to_nozzle(impl_->gl_internal_format_);
-    bbb::nozzle::texture_desc tex_desc{};
+    nozzle::texture_desc tex_desc{};
     tex_desc.width = static_cast<uint32_t>(impl_->width_);
     tex_desc.height = static_cast<uint32_t>(impl_->height_);
     tex_desc.format = nozzle_format;
@@ -255,7 +255,7 @@ bool ofxNozzleSender::publish() {
     auto &writable = frame_result.value();
     auto &frame_tex = writable.get_texture();
 
-    ID3D11Texture2D *d3d_tex = bbb::nozzle::d3d11::get_texture(frame_tex);
+    ID3D11Texture2D *d3d_tex = nozzle::d3d11::get_texture(frame_tex);
     if (!d3d_tex) {
         ofLogError("ofxNozzleSender") << "failed to get D3D11 texture from writable frame";
         return false;
@@ -300,7 +300,7 @@ void ofxNozzleSender::setMetadata(const std::string &key, const std::string &val
         return;
     }
 
-    bbb::nozzle::metadata_list metadata = {{key, value}};
+    nozzle::metadata_list metadata = {{key, value}};
     auto result = impl_->sender_.set_metadata(metadata);
     if (!result.ok()) {
         ofLogError("ofxNozzleSender") << "set_metadata failed: "

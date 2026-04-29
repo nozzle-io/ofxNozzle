@@ -12,8 +12,8 @@
 #include "ofxNozzleSender.h"
 #include "ofxNozzleInterop.h"
 
-#include <bbb/nozzle/nozzle.hpp>
-#include <bbb/nozzle/backends/metal.hpp>
+#include <nozzle/nozzle.hpp>
+#include <nozzle/backends/metal.hpp>
 
 #include "ofLog.h"
 #include "ofAppRunner.h"
@@ -61,8 +61,8 @@ struct ofxNozzleSender::Impl {
     GLuint fbo_id_{0};
     GLint saved_fbo_{0};
     GLint saved_viewport[4]{};
-    bbb::nozzle::sender sender_{};
-    bbb::nozzle::texture nozzle_texture_{};
+    nozzle::sender sender_{};
+    nozzle::texture nozzle_texture_{};
 
     ~Impl() {
         close();
@@ -74,8 +74,8 @@ struct ofxNozzleSender::Impl {
         }
         setup_ = false;
 
-        nozzle_texture_ = bbb::nozzle::texture{};
-        sender_ = bbb::nozzle::sender{};
+        nozzle_texture_ = nozzle::texture{};
+        sender_ = nozzle::sender{};
 
         if (fbo_id_ != 0) {
             glDeleteFramebuffers(1, &fbo_id_);
@@ -192,14 +192,14 @@ bool ofxNozzleSender::setup(
     impl_->interop_.mtl_texture = mtl_tex;
 
     // 6. Create nozzle::texture via wrap_texture
-    bbb::nozzle::metal::texture_wrap_desc wrap_desc{};
+    nozzle::metal::texture_wrap_desc wrap_desc{};
     wrap_desc.texture = mtl_tex;
     wrap_desc.io_surface = impl_->interop_.io_surface;
     wrap_desc.format = impl_->interop_.pixel_format;
     wrap_desc.width = static_cast<uint32_t>(width);
     wrap_desc.height = static_cast<uint32_t>(height);
 
-    auto tex_result = bbb::nozzle::metal::wrap_texture(wrap_desc);
+    auto tex_result = nozzle::metal::wrap_texture(wrap_desc);
     if (!tex_result.ok()) {
         ofLogError("ofxNozzleSender") << "wrap_texture failed: " << tex_result.error().message;
         release_objc_ptr(mtl_tex);
@@ -226,15 +226,15 @@ bool ofxNozzleSender::setup(
         }
     }
 
-    bbb::nozzle::sender_desc sender_desc{};
+    nozzle::sender_desc sender_desc{};
     sender_desc.name = name;
     sender_desc.application_name = app_name;
     sender_desc.ring_buffer_size = 3;
 
-    auto sender_result = bbb::nozzle::sender::create(sender_desc);
+    auto sender_result = nozzle::sender::create(sender_desc);
     if (!sender_result.ok()) {
         ofLogError("ofxNozzleSender") << "sender::create failed: " << sender_result.error().message;
-        impl_->nozzle_texture_ = bbb::nozzle::texture{};
+        impl_->nozzle_texture_ = nozzle::texture{};
         release_objc_ptr(mtl_tex);
         release_objc_ptr(impl_->mtl_device_);
         impl_->mtl_device_ = nullptr;
@@ -307,7 +307,7 @@ void ofxNozzleSender::setMetadata(const std::string &key, const std::string &val
         return;
     }
 
-    bbb::nozzle::metadata_list metadata = {{key, value}};
+    nozzle::metadata_list metadata = {{key, value}};
     auto result = impl_->sender_.set_metadata(metadata);
     if (!result.ok()) {
         ofLogError("ofxNozzleSender") << "set_metadata failed: " << result.error().message;

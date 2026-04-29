@@ -14,8 +14,8 @@
 
 #include "ofxNozzleReceiver.h"
 
-#include <bbb/nozzle/nozzle.hpp>
-#include <bbb/nozzle/backends/d3d11.hpp>
+#include <nozzle/nozzle.hpp>
+#include <nozzle/backends/d3d11.hpp>
 #include "ofLog.h"
 
 struct ofxNozzleReceiver::Impl {
@@ -24,7 +24,7 @@ struct ofxNozzleReceiver::Impl {
     bool setup_{false};
     bool connected_{false};
 
-    bbb::nozzle::receiver receiver_{};
+    nozzle::receiver receiver_{};
     ofTexture texture_{};
     GLuint gl_texture_{0};
     int current_width_{0};
@@ -49,50 +49,50 @@ struct ofxNozzleReceiver::Impl {
             gl_texture_ = 0;
         }
 
-        receiver_ = bbb::nozzle::receiver{};
+        receiver_ = nozzle::receiver{};
     }
 
-    static uint32_t format_bytes_per_pixel(bbb::nozzle::texture_format fmt) {
+    static uint32_t format_bytes_per_pixel(nozzle::texture_format fmt) {
         switch (fmt) {
-            case bbb::nozzle::texture_format::rgba16_float:
-            case bbb::nozzle::texture_format::rg32_float:
+            case nozzle::texture_format::rgba16_float:
+            case nozzle::texture_format::rg32_float:
                 return 8;
-            case bbb::nozzle::texture_format::rgba32_float:
-            case bbb::nozzle::texture_format::rgba32_uint:
+            case nozzle::texture_format::rgba32_float:
+            case nozzle::texture_format::rgba32_uint:
                 return 16;
-            case bbb::nozzle::texture_format::r32_float:
-            case bbb::nozzle::texture_format::r32_uint:
+            case nozzle::texture_format::r32_float:
+            case nozzle::texture_format::r32_uint:
                 return 4;
             default:
                 return 4;
         }
     }
 
-    static GLenum nozzle_format_to_gl_internal(bbb::nozzle::texture_format fmt) {
+    static GLenum nozzle_format_to_gl_internal(nozzle::texture_format fmt) {
         switch (fmt) {
-            case bbb::nozzle::texture_format::rgba8_unorm:  return GL_RGBA8;
-            case bbb::nozzle::texture_format::bgra8_unorm:  return GL_BGRA8_EXT;
-            case bbb::nozzle::texture_format::rgba16_float: return GL_RGBA16F;
+            case nozzle::texture_format::rgba8_unorm:  return GL_RGBA8;
+            case nozzle::texture_format::bgra8_unorm:  return GL_BGRA8_EXT;
+            case nozzle::texture_format::rgba16_float: return GL_RGBA16F;
             default: return GL_BGRA8_EXT;
         }
     }
 
-    static GLenum nozzle_format_to_gl_format(bbb::nozzle::texture_format fmt) {
+    static GLenum nozzle_format_to_gl_format(nozzle::texture_format fmt) {
         switch (fmt) {
-            case bbb::nozzle::texture_format::rgba8_unorm:  return GL_RGBA;
-            case bbb::nozzle::texture_format::rgba16_float: return GL_RGBA;
+            case nozzle::texture_format::rgba8_unorm:  return GL_RGBA;
+            case nozzle::texture_format::rgba16_float: return GL_RGBA;
             default: return GL_BGRA;
         }
     }
 
-    static GLenum nozzle_format_to_gl_type(bbb::nozzle::texture_format fmt) {
+    static GLenum nozzle_format_to_gl_type(nozzle::texture_format fmt) {
         switch (fmt) {
-            case bbb::nozzle::texture_format::rgba16_float: return GL_HALF_FLOAT;
+            case nozzle::texture_format::rgba16_float: return GL_HALF_FLOAT;
             default: return GL_UNSIGNED_BYTE;
         }
     }
 
-    bool update_texture_from_frame(const bbb::nozzle::frame &frame) {
+    bool update_texture_from_frame(const nozzle::frame &frame) {
         const auto &tex = frame.get_texture();
         const auto &info = frame.info();
 
@@ -104,7 +104,7 @@ struct ofxNozzleReceiver::Impl {
         int new_width = static_cast<int>(info.width);
         int new_height = static_cast<int>(info.height);
 
-        ID3D11Texture2D *d3d_tex = bbb::nozzle::d3d11::get_texture(tex);
+        ID3D11Texture2D *d3d_tex = nozzle::d3d11::get_texture(tex);
         if (!d3d_tex) {
             ofLogError("ofxNozzleReceiver") << "failed to get D3D11 texture from frame";
             return false;
@@ -246,11 +246,11 @@ bool ofxNozzleReceiver::setup(const std::string &name, float timeoutMs) {
     impl_->sender_name_ = name;
     impl_->timeout_ms_ = timeoutMs;
 
-    bbb::nozzle::receiver_desc recv_desc{};
+    nozzle::receiver_desc recv_desc{};
     recv_desc.name = name;
-    recv_desc.receive_mode_val = bbb::nozzle::receive_mode::latest_only;
+    recv_desc.receive_mode_val = nozzle::receive_mode::latest_only;
 
-    auto result = bbb::nozzle::receiver::create(recv_desc);
+    auto result = nozzle::receiver::create(recv_desc);
     if (!result.ok()) {
         ofLogNotice("ofxNozzleReceiver") << "sender \"" << name
             << "\" not found yet (will retry on receive): "
@@ -281,11 +281,11 @@ bool ofxNozzleReceiver::receive() {
     }
 
     if (!impl_->connected_) {
-        bbb::nozzle::receiver_desc recv_desc{};
+        nozzle::receiver_desc recv_desc{};
         recv_desc.name = impl_->sender_name_;
-        recv_desc.receive_mode_val = bbb::nozzle::receive_mode::latest_only;
+        recv_desc.receive_mode_val = nozzle::receive_mode::latest_only;
 
-        auto result = bbb::nozzle::receiver::create(recv_desc);
+        auto result = nozzle::receiver::create(recv_desc);
         if (!result.ok()) {
             return false;
         }
@@ -298,28 +298,28 @@ bool ofxNozzleReceiver::receive() {
 
     if (!impl_->receiver_.is_connected()) {
         impl_->connected_ = false;
-        impl_->receiver_ = bbb::nozzle::receiver{};
+        impl_->receiver_ = nozzle::receiver{};
         ofLogWarning("ofxNozzleReceiver") << "sender disconnected";
         return false;
     }
 
-    bbb::nozzle::acquire_desc acquire{};
+    nozzle::acquire_desc acquire{};
     acquire.timeout_ms = static_cast<uint64_t>(impl_->timeout_ms_);
 
     auto frame_result = impl_->receiver_.acquire_frame(acquire);
     if (!frame_result.ok()) {
-        if (frame_result.error().code == bbb::nozzle::ErrorCode::Timeout ||
-            frame_result.error().code == bbb::nozzle::ErrorCode::SenderClosed) {
-            if (frame_result.error().code == bbb::nozzle::ErrorCode::SenderClosed) {
+        if (frame_result.error().code == nozzle::ErrorCode::Timeout ||
+            frame_result.error().code == nozzle::ErrorCode::SenderClosed) {
+            if (frame_result.error().code == nozzle::ErrorCode::SenderClosed) {
                 impl_->connected_ = false;
-                impl_->receiver_ = bbb::nozzle::receiver{};
+                impl_->receiver_ = nozzle::receiver{};
             }
             return false;
         }
         ofLogError("ofxNozzleReceiver") << "acquire_frame failed: "
             << frame_result.error().message;
         impl_->connected_ = false;
-        impl_->receiver_ = bbb::nozzle::receiver{};
+        impl_->receiver_ = nozzle::receiver{};
         return false;
     }
 

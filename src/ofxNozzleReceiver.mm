@@ -12,8 +12,8 @@
 #include "ofxNozzleReceiver.h"
 #include "ofxNozzleInterop.h"
 
-#include <bbb/nozzle/nozzle.hpp>
-#include <bbb/nozzle/backends/metal.hpp>
+#include <nozzle/nozzle.hpp>
+#include <nozzle/backends/metal.hpp>
 
 #include "ofLog.h"
 
@@ -25,7 +25,7 @@ struct ofxNozzleReceiver::Impl {
     bool setup_{false};
     bool connected_{false};
 
-    bbb::nozzle::receiver receiver_{};
+    nozzle::receiver receiver_{};
     ofTexture texture_{};
     uint32_t current_iosurface_id_{0};
     int current_width_{0};
@@ -55,10 +55,10 @@ struct ofxNozzleReceiver::Impl {
         }
         gl_texture_cache_.clear();
 
-        receiver_ = bbb::nozzle::receiver{};
+        receiver_ = nozzle::receiver{};
     }
 
-    bool update_texture_from_frame(const bbb::nozzle::frame &frame) {
+    bool update_texture_from_frame(const nozzle::frame &frame) {
         const auto &tex = frame.get_texture();
         const auto &info = frame.info();
 
@@ -68,7 +68,7 @@ struct ofxNozzleReceiver::Impl {
         }
 
         // Get IOSurface from the nozzle texture
-        void *surface_ptr = bbb::nozzle::metal::get_io_surface(tex);
+        void *surface_ptr = nozzle::metal::get_io_surface(tex);
         if (!surface_ptr) {
             ofLogError("ofxNozzleReceiver") << "texture has no IOSurface";
             return false;
@@ -86,17 +86,17 @@ struct ofxNozzleReceiver::Impl {
         uint32_t gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
 
         switch (info.format) {
-            case bbb::nozzle::texture_format::rgba8_unorm:
+            case nozzle::texture_format::rgba8_unorm:
                 gl_internal_format = GL_RGBA8;
                 gl_format = GL_RGBA;
                 gl_type = GL_UNSIGNED_BYTE;
                 break;
-            case bbb::nozzle::texture_format::bgra8_unorm:
+            case nozzle::texture_format::bgra8_unorm:
                 gl_internal_format = GL_BGRA8_EXT;
                 gl_format = GL_BGRA;
                 gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
                 break;
-            case bbb::nozzle::texture_format::rgba16_float:
+            case nozzle::texture_format::rgba16_float:
                 gl_internal_format = GL_RGBA16F;
                 gl_format = GL_RGBA;
                 gl_type = GL_HALF_FLOAT;
@@ -186,12 +186,12 @@ bool ofxNozzleReceiver::setup(const std::string &name, float timeoutMs) {
     impl_->sender_name_ = name;
     impl_->timeout_ms_ = timeoutMs;
 
-    bbb::nozzle::receiver_desc recv_desc{};
+    nozzle::receiver_desc recv_desc{};
     recv_desc.name = name;
-    recv_desc.receive_mode_val = bbb::nozzle::receive_mode::latest_only;
+    recv_desc.receive_mode_val = nozzle::receive_mode::latest_only;
 
     // Try to create receiver — sender may not exist yet
-    auto result = bbb::nozzle::receiver::create(recv_desc);
+    auto result = nozzle::receiver::create(recv_desc);
     if (!result.ok()) {
         ofLogNotice("ofxNozzleReceiver") << "sender \"" << name
             << "\" not found yet (will retry on receive): "
@@ -224,11 +224,11 @@ bool ofxNozzleReceiver::receive() {
 
     // If not connected, try to reconnect
     if (!impl_->connected_) {
-        bbb::nozzle::receiver_desc recv_desc{};
+        nozzle::receiver_desc recv_desc{};
         recv_desc.name = impl_->sender_name_;
-        recv_desc.receive_mode_val = bbb::nozzle::receive_mode::latest_only;
+        recv_desc.receive_mode_val = nozzle::receive_mode::latest_only;
 
-        auto result = bbb::nozzle::receiver::create(recv_desc);
+        auto result = nozzle::receiver::create(recv_desc);
         if (!result.ok()) {
             return false;
         }
@@ -241,28 +241,28 @@ bool ofxNozzleReceiver::receive() {
     // Check if sender is still alive
     if (!impl_->receiver_.is_connected()) {
         impl_->connected_ = false;
-        impl_->receiver_ = bbb::nozzle::receiver{};
+        impl_->receiver_ = nozzle::receiver{};
         ofLogWarning("ofxNozzleReceiver") << "sender disconnected";
         return false;
     }
 
-    bbb::nozzle::acquire_desc acquire{};
+    nozzle::acquire_desc acquire{};
     acquire.timeout_ms = static_cast<uint64_t>(impl_->timeout_ms_);
 
     auto frame_result = impl_->receiver_.acquire_frame(acquire);
     if (!frame_result.ok()) {
         // Timeout or sender not producing frames yet — not an error
-        if (frame_result.error().code == bbb::nozzle::ErrorCode::Timeout ||
-            frame_result.error().code == bbb::nozzle::ErrorCode::SenderClosed) {
-            if (frame_result.error().code == bbb::nozzle::ErrorCode::SenderClosed) {
+        if (frame_result.error().code == nozzle::ErrorCode::Timeout ||
+            frame_result.error().code == nozzle::ErrorCode::SenderClosed) {
+            if (frame_result.error().code == nozzle::ErrorCode::SenderClosed) {
                 impl_->connected_ = false;
-                impl_->receiver_ = bbb::nozzle::receiver{};
+                impl_->receiver_ = nozzle::receiver{};
             }
             return false;
         }
         ofLogError("ofxNozzleReceiver") << "acquire_frame failed: " << frame_result.error().message;
         impl_->connected_ = false;
-        impl_->receiver_ = bbb::nozzle::receiver{};
+        impl_->receiver_ = nozzle::receiver{};
         return false;
     }
 

@@ -21,54 +21,23 @@ jobs:
           path: addons/ofxNozzle
           submodules: recursive
 
-      - name: Create test app
-        run: |
-          mkdir -p apps/devApps/ofxNozzleTest/src
-          cat > apps/devApps/ofxNozzleTest/src/main.cpp << 'EOF'
-          #include "ofMain.h"
-          #include "ofApp.h"
-          int main() {
-            ofSetupOpenGL(100, 100, OF_WINDOW);
-            ofRunApp(new ofApp());
-          }
-          EOF
-          cat > apps/devApps/ofxNozzleTest/src/ofApp.h << 'EOF'
-          #pragma once
-          #include "ofMain.h"
-          #include "ofxNozzle.h"
-          class ofApp : public ofBaseApp {
-          public:
-            void setup() override;
-            void draw() override;
-          private:
-            ofxNozzleSender sender;
-            ofxNozzleReceiver receiver;
-          };
-          EOF
-          cat > apps/devApps/ofxNozzleTest/src/ofApp.cpp << 'EOF'
-          #include "ofApp.h"
-          void ofApp::setup() {}
-          void ofApp::draw() {}
-          EOF
-          echo "ofxNozzle" > apps/devApps/ofxNozzleTest/addons.make
-
       - name: Cache oF build
         uses: actions/cache@v4
         with:
           path: libs/openFrameworksCompiled
-          key: of-0.12.0-macos-v3
+          key: of-0.12.0-macos-v4
 
       - name: Generate project
         uses: nandenjin/openframeworks-action@v1
         with:
           command: projectgenerator
-          project_root: apps/devApps/ofxNozzleTest
+          project_root: addons/ofxNozzle/testApp
 
       - name: Build
         uses: nandenjin/openframeworks-action@v1
         with:
           command: build
-          project_root: apps/devApps/ofxNozzleTest
+          project_root: addons/ofxNozzle/testApp
 
   build-windows:
     runs-on: windows-2022
@@ -84,62 +53,17 @@ jobs:
           path: addons/ofxNozzle
           submodules: recursive
 
-      - name: Create test app
-        shell: bash
-        run: |
-          mkdir -p apps/devApps/ofxNozzleTest/src
-          cat > apps/devApps/ofxNozzleTest/src/main.cpp << 'EOF'
-          #include "ofMain.h"
-          #include "ofApp.h"
-          int main() {
-            ofSetupOpenGL(100, 100, OF_WINDOW);
-            ofRunApp(new ofApp());
-          }
-          EOF
-          cat > apps/devApps/ofxNozzleTest/src/ofApp.h << 'EOF'
-          #pragma once
-          #include "ofMain.h"
-          #include "ofxNozzle.h"
-          class ofApp : public ofBaseApp {
-          public:
-            void setup() override;
-            void draw() override;
-          private:
-            ofxNozzleSender sender;
-            ofxNozzleReceiver receiver;
-          };
-          EOF
-          cat > apps/devApps/ofxNozzleTest/src/ofApp.cpp << 'EOF'
-          #include "ofApp.h"
-          void ofApp::setup() {}
-          void ofApp::draw() {}
-          EOF
-          echo "ofxNozzle" > apps/devApps/ofxNozzleTest/addons.make
-
       - name: Cache oF build
         uses: actions/cache@v4
         with:
           path: libs/openFrameworksCompiled
-          key: of-0.12.0-windows-v3
+          key: of-0.12.0-windows-v4
 
       - name: Generate project
         uses: nandenjin/openframeworks-action@v1
         with:
           command: projectgenerator
-          project_root: apps/devApps/ofxNozzleTest
-
-      - name: Inject preprocessor defines
-        shell: pwsh
-        run: |
-          Set-Content -Path "apps/devApps/ofxNozzleTest/Directory.Build.props" -Value @'
-          <Project>
-            <ItemDefinitionGroup>
-              <ClCompile>
-                <PreprocessorDefinitions>NOZZLE_PLATFORM_WINDOWS=1;NOZZLE_HAS_D3D11=1;NOZZLE_HAS_OPENGL=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-              </ClCompile>
-            </ItemDefinitionGroup>
-          </Project>
-          '@
+          project_root: addons/ofxNozzle/testApp
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -148,7 +72,7 @@ jobs:
         uses: nandenjin/openframeworks-action@v1
         with:
           command: build
-          project_root: apps/devApps/ofxNozzleTest
+          project_root: addons/ofxNozzle/testApp
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -188,57 +112,12 @@ jobs:
             libraw1394-dev libudev-dev libusb-1.0-0-dev \
             cmake gdb
 
-      - name: Create test app
-        run: |
-          mkdir -p apps/devApps/ofxNozzleTest/src
-          cat > apps/devApps/ofxNozzleTest/src/main.cpp << 'EOF'
-          #include "ofMain.h"
-          #include "ofApp.h"
-          int main() {
-            ofSetupOpenGL(100, 100, OF_WINDOW);
-            ofRunApp(new ofApp());
-          }
-          EOF
-          cat > apps/devApps/ofxNozzleTest/src/ofApp.h << 'EOF'
-          #pragma once
-          #include "ofMain.h"
-          #include "ofxNozzle.h"
-          class ofApp : public ofBaseApp {
-          public:
-            void setup() override;
-            void draw() override;
-          private:
-            ofxNozzleSender sender;
-            ofxNozzleReceiver receiver;
-          };
-          EOF
-          cat > apps/devApps/ofxNozzleTest/src/ofApp.cpp << 'EOF'
-          #include "ofApp.h"
-          void ofApp::setup() {}
-          void ofApp::draw() {}
-          EOF
-          echo "ofxNozzle" > apps/devApps/ofxNozzleTest/addons.make
-
       - name: Cache oF build
         uses: actions/cache@v4
         with:
           path: libs/openFrameworksCompiled
-          key: of-0.12.0-linux-v3
-
-      - name: Generate Makefile
-        run: |
-          cat > apps/devApps/ofxNozzleTest/Makefile << 'MAKEFILE'
-          ifneq ($(wildcard config.make),)
-          	include config.make
-          endif
-          ifndef OF_ROOT
-          	OF_ROOT=../../..
-          endif
-          PROJECT_DEFINES = NOZZLE_PLATFORM_LINUX=1 NOZZLE_HAS_DMA_BUF=1 NOZZLE_HAS_OPENGL=1
-          PROJECT_USER_CFLAGS = -I/usr/include/libdrm
-          include $(OF_ROOT)/libs/openFrameworksCompiled/project/makefileCommon/compile.project.mk
-          MAKEFILE
+          key: of-0.12.0-linux-v4
 
       - name: Build
         run: make -j$(nproc)
-        working-directory: apps/devApps/ofxNozzleTest
+        working-directory: addons/ofxNozzle/testApp

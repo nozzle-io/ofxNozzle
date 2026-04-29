@@ -210,10 +210,7 @@ bool ofxNozzleSender::setup(
     impl_->nozzle_texture_ = std::move(tex_result.value());
 
     // 7. Create nozzle sender
-    std::string app_name = ofGetWindowTitle();
-    if (app_name.empty()) {
-        app_name = "openFrameworks";
-    }
+    std::string app_name = "openFrameworks";
 
     nozzle::sender_desc sender_desc{};
     sender_desc.name = name;

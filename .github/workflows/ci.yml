@@ -191,19 +191,17 @@ jobs:
           path: libs/openFrameworksCompiled
           key: of-0.12.0-linux-v1
 
-      - name: Debug oF directory structure
-        run: ls -la libs/openFrameworksCompiled/project/ && find libs/openFrameworksCompiled/project/ -name "verify*" 2>&1
-
       - name: Generate Makefile
         run: |
           cat > apps/devApps/ofxNozzleTest/Makefile << 'MAKEFILE'
           ifneq ($(wildcard config.make),)
-          include config.make
+          	include config.make
           endif
-          include ../../../libs/openFrameworksCompiled/project/makefileCommon/verify.ofroot.mk
+          ifndef OF_ROOT
+          	OF_ROOT=../../..
+          endif
+          include $(OF_ROOT)/libs/openFrameworksCompiled/project/makefileCommon/compile.project.mk
           MAKEFILE
-          # Strip leading whitespace (Make requires include at column 0)
-          sed -i 's/^[[:space:]]*//' apps/devApps/ofxNozzleTest/Makefile
 
       - name: Build
         run: make -j$(nproc)

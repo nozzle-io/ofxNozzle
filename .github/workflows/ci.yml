@@ -194,17 +194,13 @@ jobs:
       - name: Generate Makefile
         run: |
           cat > apps/devApps/ofxNozzleTest/Makefile << 'MAKEFILE'
-          # Load config if present
           ifneq ($(wildcard config.make),)
-          	include config.make
+          include config.make
           endif
-
-          # Verify oF root
-          include libs/openFrameworksCompiled/project/makefileCommon/verify.ofroot.mk
-
-          # Addon includes
-          include libs/openFrameworksCompiled/project/addons.make
+          include ../../../../libs/openFrameworksCompiled/project/makefileCommon/verify.ofroot.mk
           MAKEFILE
+          # Strip leading whitespace (Make requires include at column 0)
+          sed -i 's/^[[:space:]]*//' apps/devApps/ofxNozzleTest/Makefile
 
       - name: Build
         run: make -j$(nproc)

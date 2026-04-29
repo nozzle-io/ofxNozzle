@@ -1,7 +1,7 @@
 // ofxNozzleSender_linux.cpp - Linux: GL FBO → glReadPixels → DMA-BUF mmap → nozzle publish
 
 #ifndef NOZZLE_HAS_DMA_BUF
-#error "This file requires NOZZLE_HAS_DMA_BUF"
+#define NOZZLE_HAS_DMA_BUF
 #endif
 
 #include "ofMain.h"

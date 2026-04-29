@@ -26,7 +26,7 @@ jobs:
           FAIL=0
           for f in $(find openFrameworks/addons/ofxNozzle/src/platform/macos -name '*.mm' -o -name '*.cpp' 2>/dev/null); do
             echo "=== Compiling: $f ==="
-            clang++ -std=c++17 -fPIC -fno-exceptions -fno-rtti \
+            clang++ -std=c++17 -fPIC \
               -x objective-c++ -fobjc-arc \
               -framework Metal -framework IOSurface -framework Foundation -framework OpenGL \
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/include \
@@ -72,52 +72,44 @@ jobs:
           path: openFrameworks/addons/ofxNozzle
           submodules: recursive
 
-      - name: Create test app
+      - name: Setup MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Compile addon sources
         shell: bash
         run: |
-          mkdir -p openFrameworks/apps/devApps/ofxNozzleTest/src
-          cat > openFrameworks/apps/devApps/ofxNozzleTest/src/main.cpp << 'EOF'
-          #include "ofMain.h"
-          #include "ofApp.h"
-          int main() {
-            ofSetupOpenGL(100, 100, OF_WINDOW);
-            ofRunApp(new ofApp());
-          }
-          EOF
-          cat > openFrameworks/apps/devApps/ofxNozzleTest/src/ofApp.h << 'EOF'
-          #pragma once
-          #include "ofMain.h"
-          #include "ofxNozzle.h"
-          class ofApp : public ofBaseApp {
-          public:
-            void setup() override;
-            void draw() override;
-          private:
-            ofxNozzleSender sender;
-            ofxNozzleReceiver receiver;
-          };
-          EOF
-          cat > openFrameworks/apps/devApps/ofxNozzleTest/src/ofApp.cpp << 'EOF'
-          #include "ofApp.h"
-          void ofApp::setup() {}
-          void ofApp::draw() {}
-          EOF
-          echo "ofxNozzle" > openFrameworks/apps/devApps/ofxNozzleTest/addons.make
-
-      - name: Generate project
-        uses: nandenjin/openframeworks-action@v1
-        with:
-          command: projectgenerator
-          project_root: openFrameworks/apps/devApps/ofxNozzleTest
-
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
-
-      - name: Build
-        uses: nandenjin/openframeworks-action@v1
-        with:
-          command: build
-          project_root: openFrameworks/apps/devApps/ofxNozzleTest
+          FAIL=0
+          for f in $(find openFrameworks/addons/ofxNozzle/src/platform/win -name '*.cpp' 2>/dev/null); do
+            echo "=== Compiling: $f ==="
+            clang++ -std=c++17 -c \
+              -I openFrameworks/addons/ofxNozzle/libs/nozzle/include \
+              -I openFrameworks/addons/ofxNozzle/libs/nozzle/libs/plog/include \
+              -I openFrameworks/addons/ofxNozzle/src \
+              -I libs/openFrameworks \
+              -I libs/openFrameworks/utils \
+              -I libs/openFrameworks/types \
+              -I libs/openFrameworks/events \
+              -I libs/openFrameworks/gl \
+              -I libs/openFrameworks/graphics \
+              -I libs/openFrameworks/math \
+              -I libs/openFrameworks/3d \
+              -I libs/openFrameworks/app \
+              -I libs/openFrameworks/communication \
+              -I libs/openFrameworks/sound \
+              -I libs/openFrameworks/video \
+              -I libs/glew/include \
+              -I libs/glfw/include \
+              -I libs/glm/include \
+              -I libs/json/include \
+              -I libs/pugixml/include \
+              -I libs/tess2/include \
+              -I libs/utf8/include \
+              -I libs/boost/include \
+              -I libs/freetype/include/freetype2 \
+              -DNOZZLE_HAS_D3D11 \
+              "$f" -o NUL || { echo "FAILED: $f"; FAIL=1; }
+          done
+          exit $FAIL
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -134,14 +126,14 @@ jobs:
           submodules: recursive
 
       - name: Install dependencies
-        run: sudo apt-get update && sudo apt-get install -y libdrm-dev libgbm-dev libegl-dev libgl-dev
+        run: sudo apt-get update && sudo apt-get install -y libdrm-dev libgbm-dev libegl-dev libgl-dev libglew-dev
 
       - name: Compile addon sources
         run: |
           FAIL=0
           for f in $(find openFrameworks/addons/ofxNozzle/src/platform/linux -name '*.cpp' 2>/dev/null); do
             echo "=== Compiling: $f ==="
-            g++ -std=c++17 -fPIC -fno-exceptions -fno-rtti \
+            g++ -std=c++17 -fPIC \
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/include \
               -I openFrameworks/addons/ofxNozzle/libs/nozzle/libs/plog/include \
               -I openFrameworks/addons/ofxNozzle/src \

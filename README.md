@@ -2,16 +2,16 @@
 
 openFrameworks addon for GPU texture sharing via [nozzle](https://github.com/nozzle-io/nozzle) — a cross-platform alternative to Syphon (macOS) and Spout (Windows).
 
-Shares textures between processes on the same machine using IOSurface-backed Metal/OpenGL interop on macOS.
+Shares textures between processes on the same machine using platform-native GPU interop: Metal/IOSurface on macOS, D3D11 on Windows, DMA-BUF on Linux.
 
 ## Platform Support
 
-| Platform | Status |
-|----------|--------|
-| macOS (Apple Silicon) | Supported |
-| macOS (Intel) | Supported |
-| Windows | Planned (nozzle D3D11 backend pending) |
-| Linux | Not planned |
+| Platform | Backend | Status |
+|----------|---------|--------|
+| macOS (Apple Silicon) | Metal/IOSurface | Supported |
+| macOS (Intel) | Metal/IOSurface | Supported |
+| Windows | D3D11 | Supported |
+| Linux | DMA-BUF | Supported |
 
 ## Setup
 
@@ -19,7 +19,7 @@ Clone into your `addons/` directory:
 
 ```bash
 cd <your_oF_project>/addons
-git clone https://github.com/2bbb/ofxNozzle.git
+git clone --recurse-submodules https://github.com/nozzle-io/ofxNozzle.git
 ```
 
 The nozzle static library is bundled in `libs/nozzle/`. No separate build needed.
@@ -108,11 +108,24 @@ Receiver flow:
 
 All Objective-C types are hidden behind pimpl. Headers are pure C++.
 
+```
+Sender flow:
+  macOS:   GL FBO → IOSurface-backed GL texture → Metal texture → nozzle shared state
+  Windows: GL FBO → glReadPixels → D3D11 texture → nozzle shared state
+  Linux:   GL FBO → glReadPixels → DMA-BUF mmap → nozzle shared state
+
+Receiver flow:
+  macOS:   nozzle acquire_frame → IOSurface → CGLTexImageIOSurface2D → cached GL texture → ofTexture
+  Windows: nozzle acquire_frame → D3D11 texture → glTexSubImage2D → cached GL texture → ofTexture
+  Linux:   nozzle acquire_frame → DMA-BUF mmap → glTexSubImage2D → cached GL texture → ofTexture
+```
+
 ## Requirements
 
 - openFrameworks 0.12+
-- macOS 12.0+
-- Metal framework (system)
+- macOS 12.0+ (Metal framework)
+- Windows 10+ (D3D11)
+- Linux (DRM/KMS, DMA-BUF)
 
 ## License
 

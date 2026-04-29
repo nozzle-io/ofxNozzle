@@ -62,10 +62,60 @@ macos:
 	ADDON_SOURCES += libs/nozzle/src/backends/metal/metal_sync.mm
 
 linux64:
+	ADDON_DEFINES = NOZZLE_HAS_DMA_BUF
+	ADDON_LDFLAGS = -lEGL -lgbm -ldrm -lGL
 	ADDON_SOURCES_EXCLUDE = src/%.mm
+	ADDON_SOURCES_EXCLUDE += src/ofxNozzleInterop.mm
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/src/backends/metal/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/src/backends/d3d11/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/tests/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/examples/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/build/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/cmake/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/libs/plog/%
+	ADDON_SOURCES = src/ofxNozzleSender_linux.cpp
+	ADDON_SOURCES += src/ofxNozzleReceiver_linux.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/registry.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/sender.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/receiver.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/frame.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/texture.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/device.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/discovery.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/metadata.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/ipc.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/pixel_access.cpp
+	ADDON_SOURCES += libs/nozzle/src/c_api/nozzle_c.cpp
+	ADDON_SOURCES += libs/nozzle/src/backends/linux/linux_texture.cpp
+	ADDON_SOURCES += libs/nozzle/src/backends/opengl/opengl_backend.cpp
 
 linux:
+	ADDON_DEFINES = NOZZLE_HAS_DMA_BUF
+	ADDON_LDFLAGS = -lEGL -lgbm -ldrm -lGL
 	ADDON_SOURCES_EXCLUDE = src/%.mm
+	ADDON_SOURCES_EXCLUDE += src/ofxNozzleInterop.mm
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/src/backends/metal/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/src/backends/d3d11/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/tests/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/examples/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/build/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/cmake/%
+	ADDON_SOURCES_EXCLUDE += libs/nozzle/libs/plog/%
+	ADDON_SOURCES = src/ofxNozzleSender_linux.cpp
+	ADDON_SOURCES += src/ofxNozzleReceiver_linux.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/registry.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/sender.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/receiver.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/frame.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/texture.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/device.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/discovery.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/metadata.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/ipc.cpp
+	ADDON_SOURCES += libs/nozzle/src/common/pixel_access.cpp
+	ADDON_SOURCES += libs/nozzle/src/c_api/nozzle_c.cpp
+	ADDON_SOURCES += libs/nozzle/src/backends/linux/linux_texture.cpp
+	ADDON_SOURCES += libs/nozzle/src/backends/opengl/opengl_backend.cpp
 
 vs:
 	ADDON_DEFINES = NOZZLE_HAS_D3D11

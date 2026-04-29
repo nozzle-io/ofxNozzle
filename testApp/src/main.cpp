@@ -1,7 +1,11 @@
 #include "ofMain.h"
+#include "ofAppNoWindow.h"
 #include "ofApp.h"
 
 int main() {
-    ofSetupOpenGL(1, 1, OF_WINDOW);
-    ofRunApp(new ofApp());
+    ofInit();
+    auto window = std::make_shared<ofAppNoWindow>();
+    auto app = std::make_shared<ofApp>();
+    ofRunApp(window, app);
+    return ofRunMainLoop();
 }

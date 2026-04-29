@@ -5,7 +5,7 @@ meta:
 	ADDON_TAGS = "texture" "sharing" "gpu" "syphon" "spout"
 
 common:
-	ADDON_INCLUDES = libs/nozzle/include libs/nozzle/libs/plog/include
+	ADDON_INCLUDES = src libs/nozzle/include libs/nozzle/libs/plog/include
 
 # macOS (uses Metal/IOSurface backend + Objective-C++ interop)
 osx:

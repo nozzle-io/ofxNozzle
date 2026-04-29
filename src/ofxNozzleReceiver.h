@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ofxNozzleConfig.h"
+
 #include <memory>
 #include <string>
 

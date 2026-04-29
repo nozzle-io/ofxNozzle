@@ -1,9 +1,5 @@
 // ofxNozzleSender.cpp - Windows: GL FBO → glReadPixels → D3D11 texture → nozzle publish
 
-#ifndef NOZZLE_HAS_D3D11
-#define NOZZLE_HAS_D3D11
-#endif
-
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>

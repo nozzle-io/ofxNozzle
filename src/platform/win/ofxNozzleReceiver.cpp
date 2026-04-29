@@ -1,9 +1,5 @@
 // ofxNozzleReceiver.cpp - Windows: nozzle frame → D3D11 → CPU → GL texture → ofTexture
 
-#ifndef NOZZLE_HAS_D3D11
-#define NOZZLE_HAS_D3D11
-#endif
-
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>

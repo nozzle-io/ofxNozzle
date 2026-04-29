@@ -1,9 +1,5 @@
 // ofxNozzleReceiver.mm - Receiver: nozzle frame → IOSurface → GL texture → ofTexture
 
-#ifndef NOZZLE_HAS_METAL
-#define NOZZLE_HAS_METAL
-#endif
-
 #include "ofMain.h"
 
 #import <IOSurface/IOSurface.h>

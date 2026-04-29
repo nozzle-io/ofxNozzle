@@ -1,9 +1,5 @@
 // ofxNozzleSender.mm - Sender: GL draw target → IOSurface → nozzle publish
 
-#ifndef NOZZLE_HAS_METAL
-#define NOZZLE_HAS_METAL
-#endif
-
 #include "ofMain.h"
 
 #import <Metal/Metal.h>

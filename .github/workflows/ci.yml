@@ -132,7 +132,10 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build
-        run: msbuild apps/devApps/ofxNozzleTest/ofxNozzleTest.sln /p:configuration=release /maxCpuCount "/p:AdditionalOptions=/DNOZZLE_HAS_D3D11 /DNOZZLE_HAS_OPENGL"
+        uses: nandenjin/openframeworks-action@v1
+        with:
+          command: build
+          project_root: apps/devApps/ofxNozzleTest
 
   build-linux:
     runs-on: ubuntu-22.04
@@ -160,6 +163,7 @@ jobs:
             gstreamer1.0-plugins-bad gstreamer1.0-libav gstreamer1.0-pulseaudio \
             libcairo2-dev libfreeimage-dev libfreetype-dev libassimp-dev \
             libpulse-dev libasound2-dev libmpg123-dev liburiparser-dev \
+            libsndfile1-dev \
             libdrm-dev libgbm-dev libegl-dev \
             cmake gdb
 

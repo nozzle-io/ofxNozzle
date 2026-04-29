@@ -1,9 +1,5 @@
 // ofxNozzleReceiver_linux.cpp - Linux: nozzle frame → DMA-BUF mmap → CPU → GL texture → ofTexture
 
-#ifndef NOZZLE_HAS_DMA_BUF
-#define NOZZLE_HAS_DMA_BUF
-#endif
-
 #include "ofMain.h"
 
 #include "ofxNozzleReceiver.h"

@@ -1,9 +1,5 @@
 // ofxNozzleSender_linux.cpp - Linux: GL FBO → glReadPixels → DMA-BUF mmap → nozzle publish
 
-#ifndef NOZZLE_HAS_DMA_BUF
-#define NOZZLE_HAS_DMA_BUF
-#endif
-
 #include "ofMain.h"
 
 #include "ofxNozzleSender.h"

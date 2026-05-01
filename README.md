@@ -1,5 +1,8 @@
 # ofxNozzle
 
+> This codebase is currently in its AI-slob prototyping phase: the code runs on momentum, vibes, and plausible intent.
+> Proper debugging will be introduced once demand graduates from hypothetical to measurable.
+
 openFrameworks addon for GPU texture sharing via [nozzle](https://github.com/nozzle-io/nozzle) — a cross-platform alternative to Syphon (macOS) and Spout (Windows).
 
 Shares textures between processes on the same machine using platform-native GPU interop: Metal/IOSurface on macOS, D3D11 on Windows, DMA-BUF on Linux.
@@ -130,3 +133,7 @@ Receiver flow:
 ## License
 
 MIT
+
+Third-party dependencies:
+
+- [nozzle](https://github.com/nozzle-io/nozzle) — MIT

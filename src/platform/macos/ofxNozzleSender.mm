@@ -15,6 +15,7 @@
 #include "ofAppRunner.h"
 #include "ofAppGLFWWindow.h"
 #include "GLFW/glfw3.h"
+#include <OpenGL/OpenGL.h>
 
 namespace {
 
@@ -104,6 +105,11 @@ bool ofxNozzleSender::setup(
     }
     if (width <= 0 || height <= 0) {
         ofLogError("ofxNozzleSender") << "dimensions must be positive";
+        return false;
+    }
+
+    if (!CGLGetCurrentContext()) {
+        ofLogError("ofxNozzleSender") << "no GL context available";
         return false;
     }
 

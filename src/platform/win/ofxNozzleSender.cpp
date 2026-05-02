@@ -122,6 +122,11 @@ bool ofxNozzleSender::setup(
         return false;
     }
 
+    if (!wglGetCurrentContext()) {
+        ofLogError("ofxNozzleSender") << "no GL context available";
+        return false;
+    }
+
     impl_ = std::make_unique<Impl>();
     impl_->name_ = name;
     impl_->width_ = width;

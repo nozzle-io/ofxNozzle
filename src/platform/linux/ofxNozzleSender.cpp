@@ -9,6 +9,7 @@
 
 #include "ofLog.h"
 
+#include <GL/glx.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <vector>
@@ -109,7 +110,7 @@ bool ofxNozzleSender::setup(
         return false;
     }
 
-    if (!glGetCurrentContext()) {
+    if (!glXGetCurrentContext()) {
         ofLogError("ofxNozzleSender") << "no GL context available";
         return false;
     }

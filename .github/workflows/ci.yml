@@ -14,7 +14,7 @@ jobs:
       addon_name: "ofxNozzle"
       test_app: "testApp"
       test_mode: "test"
-      configs: '["Release"]'
+      configs: '["Debug", "Release"]'
       preprocessor_defines: "NOZZLE_PLATFORM_WINDOWS=1;NOZZLE_HAS_D3D11=1;NOZZLE_HAS_OPENGL=1"
 
   gl-test:

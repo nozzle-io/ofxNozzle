@@ -14,4 +14,4 @@ jobs:
       addon_name: "ofxNozzle"
       test_app: "testApp"
       preprocessor_defines: "NOZZLE_PLATFORM_WINDOWS=1;NOZZLE_HAS_D3D11=1;NOZZLE_HAS_OPENGL=1"
-      cache_key_suffix: "v8"
+      cache_key_suffix: "v9"

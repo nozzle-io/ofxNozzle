@@ -17,13 +17,4 @@ jobs:
       configs: '["Debug", "Release"]'
       preprocessor_defines: "NOZZLE_PLATFORM_WINDOWS=1;NOZZLE_HAS_D3D11=1;NOZZLE_HAS_OPENGL=1"
 
-  gl-test:
-    needs: test
-    uses: 2bbb/of-actions/.github/workflows/build-addon.yml@main
-    with:
-      of_version: "0.12.0"
-      addon_name: "ofxNozzle"
-      test_app: "gl_testApp"
-      test_mode: "run"
-      configs: '["Release"]'
-      preprocessor_defines: "NOZZLE_PLATFORM_WINDOWS=1;NOZZLE_HAS_D3D11=1;NOZZLE_HAS_OPENGL=1"
+  # GL tests need GPU — run gl_testApp locally on real hardware

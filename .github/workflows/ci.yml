@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    uses: 2bbb/of-actions/.github/workflows/build-addon.yml@v2
+    uses: 2bbb/of-actions/.github/workflows/build-addon.yml@main
     with:
       of_version: "0.12.0"
       addon_name: "ofxNozzle"
@@ -19,7 +19,7 @@ jobs:
 
   gl-test:
     needs: test
-    uses: 2bbb/of-actions/.github/workflows/build-addon.yml@v2
+    uses: 2bbb/of-actions/.github/workflows/build-addon.yml@main
     with:
       of_version: "0.12.0"
       addon_name: "ofxNozzle"

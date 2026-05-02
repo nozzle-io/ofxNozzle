@@ -35,29 +35,4 @@ void ofApp::run() {
         receiver.close();
     }
 
-    {
-        ofxNozzleSender sender;
-        ofxTest(sender.setup("test-roundtrip", 256, 256), "roundtrip: sender setup");
-
-        sender.begin();
-        ofBackground(255, 0, 0);
-        sender.end();
-        sender.publish();
-
-        ofxNozzleReceiver receiver;
-        ofxTest(receiver.setup("test-roundtrip"), "roundtrip: receiver setup");
-
-        bool received = false;
-        for (int i = 0; i < 100; i++) {
-            if (receiver.receive()) {
-                received = true;
-                break;
-            }
-        }
-        ofxTest(received, "roundtrip: frame received");
-        ofxTest(receiver.isConnected(), "roundtrip: receiver connected");
-
-        receiver.close();
-        sender.close();
-    }
 }

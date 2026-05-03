@@ -5,8 +5,6 @@ void ofApp::run() {
 
     {
         ofxNozzleSender sender;
-        ofxTestEq(sender.getWidth(), 0, "sender default: width is 0");
-        ofxTestEq(sender.getHeight(), 0, "sender default: height is 0");
         ofxTest(!sender.isSetup(), "sender default: not setup");
     }
 

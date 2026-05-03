@@ -17,12 +17,21 @@
 
 namespace {
 
+int normalize_gl_format(int gl_fmt) {
+    switch (gl_fmt) {
+        case GL_RGBA:    return GL_RGBA8;
+#ifdef GL_BGRA
+        case GL_BGRA:    return GL_BGRA8_EXT;
+#endif
+        default:         return gl_fmt;
+    }
+}
+
 bool is_supported_gl_format(int gl_fmt) {
     switch (gl_fmt) {
         case GL_RGBA8:
         case GL_BGRA8_EXT:
         case GL_RGBA16F:
-        case GL_RGBA32F:
             return true;
         default:
             return false;
@@ -169,7 +178,7 @@ bool ofxNozzleSender::publishTexture(const ofTexture &tex) {
     return publishTexture(
         td.textureID, td.textureTarget,
         static_cast<int>(td.width), static_cast<int>(td.height),
-        td.glInternalFormat);
+        normalize_gl_format(td.glInternalFormat));
 }
 
 bool ofxNozzleSender::publishTexture(
@@ -190,7 +199,8 @@ bool ofxNozzleSender::publishTexture(
         return false;
     }
 
-    if (!is_supported_gl_format(glInternalFormat)) {
+    int fmt = normalize_gl_format(glInternalFormat);
+    if (!is_supported_gl_format(fmt)) {
         ofLogWarning("ofxNozzleSender") << "unsupported GL format: 0x"
             << std::hex << glInternalFormat;
         return false;
@@ -201,7 +211,7 @@ bool ofxNozzleSender::publishTexture(
         return false;
     }
 
-    uint32_t bpp = gl_format_bytes_per_pixel(static_cast<uint32_t>(glInternalFormat));
+    uint32_t bpp = gl_format_bytes_per_pixel(static_cast<uint32_t>(fmt));
     size_t buf_size = static_cast<size_t>(width) * static_cast<size_t>(height) * bpp;
     if (impl_->pixel_buffer_.size() < buf_size) {
         impl_->pixel_buffer_.resize(buf_size);
@@ -225,15 +235,15 @@ bool ofxNozzleSender::publishTexture(
 
     glReadPixels(
         0, 0, width, height,
-        gl_read_format(static_cast<uint32_t>(glInternalFormat)),
-        gl_read_type(static_cast<uint32_t>(glInternalFormat)),
+        gl_read_format(static_cast<uint32_t>(fmt)),
+        gl_read_type(static_cast<uint32_t>(fmt)),
         impl_->pixel_buffer_.data());
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
                            target, 0, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, impl_->saved_fbo_);
 
-    auto nozzle_format = gl_format_to_nozzle(static_cast<uint32_t>(glInternalFormat));
+    auto nozzle_format = gl_format_to_nozzle(static_cast<uint32_t>(fmt));
     nozzle::texture_desc tex_desc{};
     tex_desc.width = static_cast<uint32_t>(width);
     tex_desc.height = static_cast<uint32_t>(height);

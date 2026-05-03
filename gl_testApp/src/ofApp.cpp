@@ -4,16 +4,16 @@ void ofApp::run() {
     ofLogNotice() << "=== ofxNozzle GL tests ===";
 
     {
+        ofFbo fbo;
+        fbo.allocate(256, 256, GL_RGBA);
+
         ofxNozzleSender sender;
-        ofxTest(sender.setup("gl-test-sender", 256, 256), "gl sender: setup");
+        ofxTest(sender.setup("gl-test-sender"), "gl sender: setup");
 
-        sender.begin();
+        fbo.begin();
         ofBackground(255, 0, 0);
-        sender.end();
-        ofxTest(true, "gl sender: begin/end without crash");
-
-        sender.update();
-        ofxTest(true, "gl sender: update without crash");
+        fbo.end();
+        ofxTest(sender.publishTexture(fbo.getTexture()), "gl sender: publishTexture");
 
         ofxNozzleReceiver receiver;
         ofxTest(receiver.setup("gl-test-sender"), "gl receiver: setup");

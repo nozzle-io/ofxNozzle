@@ -35,18 +35,20 @@ The nozzle static library is bundled in `libs/nozzle/`. No separate build needed
 #include "ofxNozzle.h"
 
 class ofApp : public ofBaseApp {
+    ofFbo fbo;
     ofxNozzleSender sender;
 
     void setup() override {
-        sender.setup("myTextureStream", 1920, 1080);
+        fbo.allocate(1920, 1080, GL_RGBA);
+        sender.setup("myTextureStream");
     }
 
     void draw() override {
-        sender.begin();
+        fbo.begin();
         ofBackground(0);
         // draw your content here
-        sender.end();
-        sender.publish();
+        fbo.end();
+        sender.publishTexture(fbo.getTexture());
     }
 };
 ```
@@ -77,14 +79,13 @@ class ofApp : public ofBaseApp {
 
 | Method | Description |
 |--------|-------------|
-| `setup(name, width, height, glFormat)` | Initialize sender. Default format: `GL_BGRA8_EXT` |
+| `setup(name)` | Initialize sender with a name |
 | `close()` | Release resources |
-| `begin()` | Bind render target (call before drawing) |
-| `end()` | Unbind render target |
-| `publish()` | Publish current frame to shared texture |
+| `publishTexture(const ofTexture&)` | Publish ofTexture to shared texture |
+| `publishTexture(GLuint, GLenum, int, int, int)` | Publish raw GL texture |
 | `setMetadata(key, value)` | Attach metadata to published frames |
-| `getWidth()` / `getHeight()` | Texture dimensions |
 | `isSetup()` | Check if initialized |
+| `getName()` | Get sender name |
 
 ### ofxNozzleReceiver
 
@@ -101,21 +102,11 @@ class ofApp : public ofBaseApp {
 
 ## Architecture
 
-```
-Sender flow:
-  GL FBO (begin/end) → IOSurface-backed GL texture → Metal texture → nozzle shared state
-
-Receiver flow:
-  nozzle acquire_frame → IOSurface → CGLTexImageIOSurface2D → cached GL texture → ofTexture
-```
-
 All Objective-C types are hidden behind pimpl. Headers are pure C++.
 
 ```
 Sender flow:
-  macOS:   GL FBO → IOSurface-backed GL texture → Metal texture → nozzle shared state
-  Windows: GL FBO → glReadPixels → D3D11 texture → nozzle shared state
-  Linux:   GL FBO → glReadPixels → DMA-BUF mmap → nozzle shared state
+  User's ofTexture → publishTexture() → nozzle core → shared state
 
 Receiver flow:
   macOS:   nozzle acquire_frame → IOSurface → CGLTexImageIOSurface2D → cached GL texture → ofTexture

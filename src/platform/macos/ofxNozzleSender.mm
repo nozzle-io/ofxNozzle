@@ -13,6 +13,16 @@
 
 namespace {
 
+int normalize_gl_format(int gl_fmt) {
+    switch (gl_fmt) {
+        case GL_RGBA:    return GL_RGBA8;
+#ifdef GL_BGRA
+        case GL_BGRA:    return GL_BGRA8_EXT;
+#endif
+        default:         return gl_fmt;
+    }
+}
+
 bool is_supported_gl_format(int gl_fmt) {
     switch (gl_fmt) {
         case GL_RGBA8:
@@ -112,7 +122,7 @@ bool ofxNozzleSender::publishTexture(const ofTexture &tex) {
     return publishTexture(
         td.textureID, td.textureTarget,
         static_cast<int>(td.width), static_cast<int>(td.height),
-        td.glInternalFormat);
+        normalize_gl_format(td.glInternalFormat));
 }
 
 bool ofxNozzleSender::publishTexture(
@@ -133,7 +143,8 @@ bool ofxNozzleSender::publishTexture(
         return false;
     }
 
-    if (!is_supported_gl_format(glInternalFormat)) {
+    int fmt = normalize_gl_format(glInternalFormat);
+    if (!is_supported_gl_format(fmt)) {
         ofLogWarning("ofxNozzleSender") << "unsupported GL format: 0x"
             << std::hex << glInternalFormat;
         return false;
@@ -146,7 +157,7 @@ bool ofxNozzleSender::publishTexture(
     gl_desc.target = target;
     gl_desc.width = static_cast<uint32_t>(width);
     gl_desc.height = static_cast<uint32_t>(height);
-    gl_desc.format = gl_format_to_nozzle(glInternalFormat);
+    gl_desc.format = gl_format_to_nozzle(fmt);
 
     auto result = nozzle::gl::publish_gl_texture(impl_->sender_, gl_desc);
     if (!result.ok()) {

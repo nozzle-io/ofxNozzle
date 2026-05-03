@@ -10,6 +10,7 @@ public:
     void draw() override;
 
 private:
+    ofFbo fbo;
     ofxNozzleSender sender;
     float hue = 0.0f;
 };

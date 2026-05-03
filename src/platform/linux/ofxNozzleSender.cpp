@@ -167,7 +167,7 @@ bool ofxNozzleSender::setup(
         return false;
     }
 
-    impl_->init_texture_from_gl(impl_->gl_texture_, width, glInternalFormat);
+    impl_->init_texture_from_gl(impl_->gl_texture_, width, height, glInternalFormat);
 
     uint32_t bpp = Impl::gl_format_bytes_per_pixel(glInternalFormat);
     impl_->pixel_buffer_.resize(

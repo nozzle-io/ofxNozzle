@@ -112,6 +112,7 @@ ofxNozzleInteropResources ofxNozzleCreateIOSurface(
             (id)kIOSurfacePixelFormat:  @(iosurface_pf),
             (id)kIOSurfaceBytesPerRow:  @(bytes_per_row),
             (id)kIOSurfaceBytesPerElement: @(bytes_per_element),
+            (id)kIOSurfaceIsGlobal:     @(YES),
         };
 
         IOSurfaceRef surface = IOSurfaceCreate((CFDictionaryRef)surface_props);

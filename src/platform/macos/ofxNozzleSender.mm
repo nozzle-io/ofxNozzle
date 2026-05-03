@@ -1,15 +1,11 @@
-// ofxNozzleSender.mm - Sender: GL draw target → IOSurface → nozzle publish
+// ofxNozzleSender.mm - Sender: GL FBO → nozzle::gl::publish_gl_texture()
 
 #include "ofMain.h"
 
-#import <Metal/Metal.h>
-#import <IOSurface/IOSurface.h>
-
 #include "ofxNozzleSender.h"
-#include "ofxNozzleInterop.h"
 
 #include <nozzle/nozzle.hpp>
-#include <nozzle/backends/metal.hpp>
+#include <nozzle/backends/opengl.hpp>
 
 #include "ofLog.h"
 #include "ofAppRunner.h"
@@ -19,17 +15,24 @@
 
 namespace {
 
-void release_objc_ptr(void *ptr) {
-#if __has_feature(objc_arc)
-    if (ptr) {
-        id obj = (__bridge_transfer id)ptr;
-        (void)obj;
+nozzle::texture_format gl_format_to_nozzle(int gl_fmt) {
+    switch (gl_fmt) {
+        case GL_BGRA8_EXT: return nozzle::texture_format::bgra8_unorm;
+        case GL_RGBA8:     return nozzle::texture_format::rgba8_unorm;
+        case GL_RGBA16F:   return nozzle::texture_format::rgba16_float;
+        case GL_RGBA32F:   return nozzle::texture_format::rgba32_float;
+        default:           return nozzle::texture_format::bgra8_unorm;
     }
-#else
-    if (ptr) {
-        [(id)ptr release];
+}
+
+GLenum internal_format_for_fbo(int gl_fmt) {
+    switch (gl_fmt) {
+        case GL_BGRA8_EXT:
+        case GL_RGBA8:  return GL_RGBA8;
+        case GL_RGBA16F: return GL_RGBA16F;
+        case GL_RGBA32F: return GL_RGBA32F;
+        default:        return GL_RGBA8;
     }
-#endif
 }
 
 } // namespace
@@ -42,18 +45,15 @@ struct ofxNozzleSender::Impl {
     bool setup_{false};
     bool use_texture_{true};
 
-    void *mtl_device_{nullptr};
-    ofxNozzleInteropResources interop_{};
     GLuint fbo_id_{0};
+    GLuint gl_tex_{0};
     GLint saved_fbo_{0};
     GLint saved_viewport[4]{};
     nozzle::sender sender_{};
-    nozzle::texture nozzle_texture_{};
     ofTexture texture_{};
+    nozzle::texture_format nozzle_format_{nozzle::texture_format::bgra8_unorm};
 
-    ~Impl() {
-        close();
-    }
+    ~Impl() { close(); }
 
     void close() {
         if (!setup_) {
@@ -62,31 +62,16 @@ struct ofxNozzleSender::Impl {
         setup_ = false;
 
         texture_.clear();
-        nozzle_texture_ = nozzle::texture{};
         sender_ = nozzle::sender{};
 
         if (fbo_id_ != 0) {
             glDeleteFramebuffers(1, &fbo_id_);
             fbo_id_ = 0;
         }
-
-        release_objc_ptr(mtl_device_);
-        mtl_device_ = nullptr;
-
-        ofxNozzleReleaseInteropResources(interop_);
-    }
-
-    void init_texture_from_gl(uint32_t gl_tex, int w, int h, int gl_fmt) {
-        texture_.setUseExternalTextureID(gl_tex);
-        auto &td = texture_.texData;
-        td.textureTarget = GL_TEXTURE_RECTANGLE_ARB;
-        td.width = static_cast<float>(w);
-        td.height = static_cast<float>(h);
-        td.tex_w = static_cast<float>(w);
-        td.tex_h = static_cast<float>(h);
-        td.glInternalFormat = gl_fmt;
-        texture_.setTextureWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-        texture_.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
+        if (gl_tex_ != 0) {
+            glDeleteTextures(1, &gl_tex_);
+            gl_tex_ = 0;
+        }
     }
 };
 
@@ -117,104 +102,55 @@ bool ofxNozzleSender::setup(
         return false;
     }
 
+    GLenum internal_fmt = internal_format_for_fbo(glInternalFormat);
+
     impl_ = std::make_unique<Impl>();
     impl_->name_ = name;
     impl_->width_ = width;
     impl_->height_ = height;
     impl_->gl_internal_format_ = glInternalFormat;
+    impl_->nozzle_format_ = gl_format_to_nozzle(glInternalFormat);
 
-    impl_->interop_ = ofxNozzleCreateIOSurface(width, height, glInternalFormat);
-    if (!impl_->interop_.valid) {
-        ofLogError("ofxNozzleSender") << "failed to create IOSurface";
-        impl_.reset();
-        return false;
-    }
-
-    uint32_t gl_tex = ofxNozzleCreateGLTextureFromIOSurface(
-        impl_->interop_.io_surface, width, height, glInternalFormat);
-    if (gl_tex == 0) {
-        ofLogError("ofxNozzleSender") << "failed to create GL texture from IOSurface";
-        ofxNozzleReleaseInteropResources(impl_->interop_);
-        impl_.reset();
-        return false;
-    }
-    impl_->interop_.gl_texture = gl_tex;
+    glGenTextures(1, &impl_->gl_tex_);
+    glBindTexture(GL_TEXTURE_2D, impl_->gl_tex_);
+    glTexImage2D(GL_TEXTURE_2D, 0, internal_fmt, width, height, 0,
+                 GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_2D, 0);
 
     glGenFramebuffers(1, &impl_->fbo_id_);
     glBindFramebuffer(GL_FRAMEBUFFER, impl_->fbo_id_);
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-        GL_TEXTURE_RECTANGLE_ARB, gl_tex, 0);
+        GL_TEXTURE_2D, impl_->gl_tex_, 0);
 
     GLenum fbo_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     if (fbo_status != GL_FRAMEBUFFER_COMPLETE) {
-        ofLogError("ofxNozzleSender") << "FBO is not complete: 0x" << std::hex << fbo_status;
+        ofLogError("ofxNozzleSender") << "FBO is not complete: 0x"
+            << std::hex << fbo_status;
+        glDeleteTextures(1, &impl_->gl_tex_);
+        impl_->gl_tex_ = 0;
         glDeleteFramebuffers(1, &impl_->fbo_id_);
         impl_->fbo_id_ = 0;
-        ofxNozzleReleaseInteropResources(impl_->interop_);
         impl_.reset();
         return false;
     }
 
-    impl_->init_texture_from_gl(gl_tex, width, height, glInternalFormat);
-
-    @autoreleasepool {
-        id<MTLDevice> device = MTLCreateSystemDefaultDevice();
-        if (!device) {
-            ofLogError("ofxNozzleSender") << "failed to create Metal device";
-            glDeleteFramebuffers(1, &impl_->fbo_id_);
-            impl_->fbo_id_ = 0;
-            ofxNozzleReleaseInteropResources(impl_->interop_);
-            impl_.reset();
-            return false;
-        }
-#if __has_feature(objc_arc)
-        impl_->mtl_device_ = (__bridge_retained void *)device;
-#else
-        impl_->mtl_device_ = (void *)device;
-#endif
-    }
-
-    void *mtl_tex = ofxNozzleCreateMetalTextureFromIOSurface(
-        impl_->mtl_device_,
-        impl_->interop_.io_surface,
-        width, height,
-        impl_->interop_.pixel_format);
-    if (!mtl_tex) {
-        ofLogError("ofxNozzleSender") << "failed to create Metal texture from IOSurface";
-        release_objc_ptr(impl_->mtl_device_);
-        impl_->mtl_device_ = nullptr;
-        glDeleteFramebuffers(1, &impl_->fbo_id_);
-        impl_->fbo_id_ = 0;
-        ofxNozzleReleaseInteropResources(impl_->interop_);
-        impl_.reset();
-        return false;
-    }
-    impl_->interop_.mtl_texture = mtl_tex;
-
-    nozzle::metal::texture_wrap_desc wrap_desc{};
-    wrap_desc.texture = mtl_tex;
-    wrap_desc.io_surface = impl_->interop_.io_surface;
-    wrap_desc.format = impl_->interop_.pixel_format;
-    wrap_desc.width = static_cast<uint32_t>(width);
-    wrap_desc.height = static_cast<uint32_t>(height);
-    wrap_desc.swizzle = nozzle::channel_swizzle::swap_rb;
-
-    auto tex_result = nozzle::metal::wrap_texture(wrap_desc);
-    if (!tex_result.ok()) {
-        ofLogError("ofxNozzleSender") << "wrap_texture failed: " << tex_result.error().message;
-        release_objc_ptr(mtl_tex);
-        release_objc_ptr(impl_->mtl_device_);
-        impl_->mtl_device_ = nullptr;
-        glDeleteFramebuffers(1, &impl_->fbo_id_);
-        impl_->fbo_id_ = 0;
-        ofxNozzleReleaseInteropResources(impl_->interop_);
-        impl_.reset();
-        return false;
-    }
-    impl_->nozzle_texture_ = std::move(tex_result.value());
+    impl_->texture_.setUseExternalTextureID(impl_->gl_tex_);
+    auto &td = impl_->texture_.texData;
+    td.textureTarget = GL_TEXTURE_2D;
+    td.width = static_cast<float>(width);
+    td.height = static_cast<float>(height);
+    td.tex_w = static_cast<float>(width);
+    td.tex_h = static_cast<float>(height);
+    td.glInternalFormat = glInternalFormat;
+    impl_->texture_.setTextureWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+    impl_->texture_.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
 
     std::string app_name = "openFrameworks";
 
@@ -225,21 +161,20 @@ bool ofxNozzleSender::setup(
 
     auto sender_result = nozzle::sender::create(sender_desc);
     if (!sender_result.ok()) {
-        ofLogError("ofxNozzleSender") << "sender::create failed: " << sender_result.error().message;
-        impl_->nozzle_texture_ = nozzle::texture{};
-        release_objc_ptr(mtl_tex);
-        release_objc_ptr(impl_->mtl_device_);
-        impl_->mtl_device_ = nullptr;
+        ofLogError("ofxNozzleSender") << "sender::create failed: "
+            << sender_result.error().message;
+        glDeleteTextures(1, &impl_->gl_tex_);
+        impl_->gl_tex_ = 0;
         glDeleteFramebuffers(1, &impl_->fbo_id_);
         impl_->fbo_id_ = 0;
-        ofxNozzleReleaseInteropResources(impl_->interop_);
         impl_.reset();
         return false;
     }
     impl_->sender_ = std::move(sender_result.value());
     impl_->setup_ = true;
 
-    ofLogNotice("ofxNozzleSender") << "setup: " << name << " " << width << "x" << height;
+    ofLogNotice("ofxNozzleSender") << "setup: " << name << " "
+        << width << "x" << height;
     return true;
 }
 
@@ -284,7 +219,14 @@ void ofxNozzleSender::update() {
 
     glFlush();
 
-    auto result = impl_->sender_.publish_external_texture(impl_->nozzle_texture_);
+    nozzle::gl::gl_texture_desc gl_desc{};
+    gl_desc.name = impl_->gl_tex_;
+    gl_desc.target = GL_TEXTURE_2D;
+    gl_desc.width = static_cast<uint32_t>(impl_->width_);
+    gl_desc.height = static_cast<uint32_t>(impl_->height_);
+    gl_desc.format = impl_->nozzle_format_;
+
+    auto result = nozzle::gl::publish_gl_texture(impl_->sender_, gl_desc);
     if (!result.ok()) {
         ofLogError("ofxNozzleSender") << "publish failed: " << result.error().message;
     }

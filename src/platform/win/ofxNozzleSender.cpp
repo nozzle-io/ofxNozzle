@@ -23,6 +23,7 @@ struct ofxNozzleSender::Impl {
     int height_{0};
     int gl_internal_format_{GL_BGRA8_EXT};
     bool setup_{false};
+    bool use_texture_{true};
 
     GLuint fbo_id_{0};
     GLuint gl_texture_{0};
@@ -30,10 +31,12 @@ struct ofxNozzleSender::Impl {
     GLint saved_viewport[4]{};
 
     nozzle::sender sender_{};
-    std::vector<uint8_t> pixel_buffer_;
+    std::vector<uint8_t> pixel_buffer_{};
+    ofTexture texture_{};
 
     ~Impl() {
         close();
+    }
     }
 
     void close() {
@@ -42,6 +45,7 @@ struct ofxNozzleSender::Impl {
         }
         setup_ = false;
 
+        texture_.clear();
         sender_ = nozzle::sender{};
 
         if (gl_texture_ != 0) {
@@ -97,6 +101,19 @@ struct ofxNozzleSender::Impl {
             case GL_RGBA8:   return GL_UNSIGNED_BYTE;
             default:         return GL_UNSIGNED_BYTE;
         }
+    }
+
+    void init_texture_from_gl(uint32_t gl_tex, int w, int h, int gl_fmt) {
+        texture_.setUseExternalTextureID(gl_tex);
+        auto &td = texture_.texData;
+        td.textureTarget = GL_TEXTURE_2D;
+        td.width = static_cast<float>(w);
+        td.height = static_cast<float>(h);
+        td.tex_w = static_cast<float>(w);
+        td.tex_h = static_cast<float>(h);
+        td.glInternalFormat = gl_fmt;
+        texture_.setTextureWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+        texture_.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
     }
 };
 
@@ -163,6 +180,8 @@ bool ofxNozzleSender::setup(
         return false;
     }
 
+    impl_->init_texture_from_gl(impl_->gl_texture_, width, glInternalFormat);
+
     uint32_t bpp = Impl::gl_format_bytes_per_pixel(glInternalFormat);
     impl_->pixel_buffer_.resize(
         static_cast<size_t>(width) * static_cast<size_t>(height) * bpp);
@@ -224,10 +243,10 @@ void ofxNozzleSender::end() {
         impl_->saved_viewport[3]);
 }
 
-bool ofxNozzleSender::publish() {
+void ofxNozzleSender::update() {
     if (!impl_ || !impl_->setup_) {
-        ofLogError("ofxNozzleSender") << "publish() called but not set up";
-        return false;
+        ofLogError("ofxNozzleSender") << "update() called but not set up";
+        return;
     }
 
     glFlush();
@@ -250,7 +269,7 @@ bool ofxNozzleSender::publish() {
     if (!frame_result.ok()) {
         ofLogError("ofxNozzleSender") << "acquire_writable_frame failed: "
             << frame_result.error().message;
-        return false;
+        return;
     }
 
     auto &writable = frame_result.value();
@@ -259,7 +278,7 @@ bool ofxNozzleSender::publish() {
     ID3D11Texture2D *d3d_tex = nozzle::d3d11::get_texture(frame_tex);
     if (!d3d_tex) {
         ofLogError("ofxNozzleSender") << "failed to get D3D11 texture from writable frame";
-        return false;
+        return;
     }
 
     D3D11_TEXTURE2D_DESC tex_desc_d3d{};
@@ -268,7 +287,7 @@ bool ofxNozzleSender::publish() {
     d3d_tex->GetDevice(&device);
     if (!device) {
         ofLogError("ofxNozzleSender") << "failed to get D3D11 device";
-        return false;
+        return;
     }
     ID3D11DeviceContext *ctx = nullptr;
     device->GetImmediateContext(&ctx);
@@ -289,10 +308,10 @@ bool ofxNozzleSender::publish() {
     if (!commit_result.ok()) {
         ofLogError("ofxNozzleSender") << "commit_frame failed: "
             << commit_result.error().message;
-        return false;
+        return;
     }
 
-    return true;
+    return;
 }
 
 void ofxNozzleSender::setMetadata(const std::string &key, const std::string &value) {
@@ -309,12 +328,66 @@ void ofxNozzleSender::setMetadata(const std::string &key, const std::string &val
     }
 }
 
-int ofxNozzleSender::getWidth() const {
-    return impl_ ? impl_->width_ : 0;
+void ofxNozzleSender::draw(float x, float y, float w, float h) const {
+    if (impl_ && impl_->texture_.isAllocated()) {
+        impl_->texture_.draw(x, y, w, h);
+    }
 }
 
-int ofxNozzleSender::getHeight() const {
-    return impl_ ? impl_->height_ : 0;
+float ofxNozzleSender::getWidth() const {
+    return impl_ ? static_cast<float>(impl_->width_) : 0.f;
+}
+
+float ofxNozzleSender::getHeight() const {
+    return impl_ ? static_cast<float>(impl_->height_) : 0.f;
+}
+
+ofTexture &ofxNozzleSender::getTexture() {
+    return impl_ ? impl_->texture_ : *const_cast<ofTexture *>(&std::as_const(*this).getTexture());
+}
+
+const ofTexture &ofxNozzleSender::getTexture() const {
+    static const ofTexture empty_texture;
+    return impl_ ? impl_->texture_ : empty_texture;
+}
+
+void ofxNozzleSender::setUseTexture(bool bUseTex) {
+    if (impl_) {
+        impl_->use_texture_ = bUseTex;
+    }
+}
+
+bool ofxNozzleSender::isUsingTexture() const {
+    return impl_ ? impl_->use_texture_ : true;
+}
+
+void ofxNozzleSender::resize(int width, int height) {
+    if (!impl_ || !impl_->setup_) {
+        ofLogError("ofxNozzleSender") << "resize() called but not set up";
+        return;
+    }
+
+    auto name = impl_->name_;
+    auto fmt = impl_->gl_internal_format_;
+    close();
+    setup(name, width, height, fmt);
+}
+
+void ofxNozzleSender::set(const ofTexture &tex) {
+    if (!impl_ || !impl_->setup_) {
+        ofLogError("ofxNozzleSender") << "set() called but not set up";
+        return;
+    }
+
+    begin();
+    ofClear(0, 0);
+    ofSetColor(255);
+    tex.draw(0, 0, getWidth(), getHeight());
+    end();
+}
+
+void ofxNozzleSender::set(ofBaseHasTexture &tex) {
+    set(tex.getTexture());
 }
 
 bool ofxNozzleSender::isSetup() const {

@@ -32,18 +32,6 @@ void release_objc_ptr(void *ptr) {
 #endif
 }
 
-void *retain_objc_ptr(void *ptr) {
-#if __has_feature(objc_arc)
-    if (ptr) {
-        id obj = (__bridge id)ptr;
-        return (__bridge_retained void *)obj;
-    }
-    return ptr;
-#else
-    return ptr;
-#endif
-}
-
 } // namespace
 
 struct ofxNozzleSender::Impl {
@@ -52,6 +40,7 @@ struct ofxNozzleSender::Impl {
     int height_{0};
     int gl_internal_format_{GL_BGRA8_EXT};
     bool setup_{false};
+    bool use_texture_{true};
 
     void *mtl_device_{nullptr};
     ofxNozzleInteropResources interop_{};
@@ -60,6 +49,7 @@ struct ofxNozzleSender::Impl {
     GLint saved_viewport[4]{};
     nozzle::sender sender_{};
     nozzle::texture nozzle_texture_{};
+    ofTexture texture_{};
 
     ~Impl() {
         close();
@@ -71,6 +61,7 @@ struct ofxNozzleSender::Impl {
         }
         setup_ = false;
 
+        texture_.clear();
         nozzle_texture_ = nozzle::texture{};
         sender_ = nozzle::sender{};
 
@@ -83,6 +74,19 @@ struct ofxNozzleSender::Impl {
         mtl_device_ = nullptr;
 
         ofxNozzleReleaseInteropResources(interop_);
+    }
+
+    void init_texture_from_gl(uint32_t gl_tex, int w, int h, int gl_fmt) {
+        texture_.setUseExternalTextureID(gl_tex);
+        auto &td = texture_.texData;
+        td.textureTarget = GL_TEXTURE_RECTANGLE_ARB;
+        td.width = static_cast<float>(w);
+        td.height = static_cast<float>(h);
+        td.tex_w = static_cast<float>(w);
+        td.tex_h = static_cast<float>(h);
+        td.glInternalFormat = gl_fmt;
+        texture_.setTextureWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+        texture_.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
     }
 };
 
@@ -119,7 +123,6 @@ bool ofxNozzleSender::setup(
     impl_->height_ = height;
     impl_->gl_internal_format_ = glInternalFormat;
 
-    // 1. Create IOSurface
     impl_->interop_ = ofxNozzleCreateIOSurface(width, height, glInternalFormat);
     if (!impl_->interop_.valid) {
         ofLogError("ofxNozzleSender") << "failed to create IOSurface";
@@ -127,7 +130,6 @@ bool ofxNozzleSender::setup(
         return false;
     }
 
-    // 2. Create GL texture from IOSurface
     uint32_t gl_tex = ofxNozzleCreateGLTextureFromIOSurface(
         impl_->interop_.io_surface, width, height, glInternalFormat);
     if (gl_tex == 0) {
@@ -138,7 +140,6 @@ bool ofxNozzleSender::setup(
     }
     impl_->interop_.gl_texture = gl_tex;
 
-    // 3. Create FBO and attach the IOSurface-backed GL texture
     glGenFramebuffers(1, &impl_->fbo_id_);
     glBindFramebuffer(GL_FRAMEBUFFER, impl_->fbo_id_);
     glFramebufferTexture2D(
@@ -157,7 +158,8 @@ bool ofxNozzleSender::setup(
         return false;
     }
 
-    // 4. Create Metal device (retain for long-term storage as void*)
+    impl_->init_texture_from_gl(gl_tex, width, height, glInternalFormat);
+
     @autoreleasepool {
         id<MTLDevice> device = MTLCreateSystemDefaultDevice();
         if (!device) {
@@ -175,7 +177,6 @@ bool ofxNozzleSender::setup(
 #endif
     }
 
-    // 5. Create Metal texture from same IOSurface
     void *mtl_tex = ofxNozzleCreateMetalTextureFromIOSurface(
         impl_->mtl_device_,
         impl_->interop_.io_surface,
@@ -193,7 +194,6 @@ bool ofxNozzleSender::setup(
     }
     impl_->interop_.mtl_texture = mtl_tex;
 
-    // 6. Create nozzle::texture via wrap_texture
     nozzle::metal::texture_wrap_desc wrap_desc{};
     wrap_desc.texture = mtl_tex;
     wrap_desc.io_surface = impl_->interop_.io_surface;
@@ -215,7 +215,6 @@ bool ofxNozzleSender::setup(
     }
     impl_->nozzle_texture_ = std::move(tex_result.value());
 
-    // 7. Create nozzle sender
     std::string app_name = "openFrameworks";
 
     nozzle::sender_desc sender_desc{};
@@ -276,10 +275,10 @@ void ofxNozzleSender::end() {
         impl_->saved_viewport[3]);
 }
 
-bool ofxNozzleSender::publish() {
+void ofxNozzleSender::update() {
     if (!impl_ || !impl_->setup_) {
-        ofLogError("ofxNozzleSender") << "publish() called but not set up";
-        return false;
+        ofLogError("ofxNozzleSender") << "update() called but not set up";
+        return;
     }
 
     glFlush();
@@ -287,10 +286,69 @@ bool ofxNozzleSender::publish() {
     auto result = impl_->sender_.publish_external_texture(impl_->nozzle_texture_);
     if (!result.ok()) {
         ofLogError("ofxNozzleSender") << "publish failed: " << result.error().message;
-        return false;
+    }
+}
+
+void ofxNozzleSender::draw(float x, float y, float w, float h) const {
+    if (impl_ && impl_->texture_.isAllocated()) {
+        impl_->texture_.draw(x, y, w, h);
+    }
+}
+
+float ofxNozzleSender::getWidth() const {
+    return impl_ ? static_cast<float>(impl_->width_) : 0.f;
+}
+
+float ofxNozzleSender::getHeight() const {
+    return impl_ ? static_cast<float>(impl_->height_) : 0.f;
+}
+
+ofTexture &ofxNozzleSender::getTexture() {
+    return impl_ ? impl_->texture_ : *const_cast<ofTexture *>(&std::as_const(*this).getTexture());
+}
+
+const ofTexture &ofxNozzleSender::getTexture() const {
+    static const ofTexture empty_texture;
+    return impl_ ? impl_->texture_ : empty_texture;
+}
+
+void ofxNozzleSender::setUseTexture(bool bUseTex) {
+    if (impl_) {
+        impl_->use_texture_ = bUseTex;
+    }
+}
+
+bool ofxNozzleSender::isUsingTexture() const {
+    return impl_ ? impl_->use_texture_ : true;
+}
+
+void ofxNozzleSender::resize(int width, int height) {
+    if (!impl_ || !impl_->setup_) {
+        ofLogError("ofxNozzleSender") << "resize() called but not set up";
+        return;
     }
 
-    return true;
+    auto name = impl_->name_;
+    auto fmt = impl_->gl_internal_format_;
+    close();
+    setup(name, width, height, fmt);
+}
+
+void ofxNozzleSender::set(const ofTexture &tex) {
+    if (!impl_ || !impl_->setup_) {
+        ofLogError("ofxNozzleSender") << "set() called but not set up";
+        return;
+    }
+
+    begin();
+    ofClear(0, 0);
+    ofSetColor(255);
+    tex.draw(0, 0, getWidth(), getHeight());
+    end();
+}
+
+void ofxNozzleSender::set(ofBaseHasTexture &tex) {
+    set(tex.getTexture());
 }
 
 void ofxNozzleSender::setMetadata(const std::string &key, const std::string &value) {
@@ -304,14 +362,6 @@ void ofxNozzleSender::setMetadata(const std::string &key, const std::string &val
     if (!result.ok()) {
         ofLogError("ofxNozzleSender") << "set_metadata failed: " << result.error().message;
     }
-}
-
-int ofxNozzleSender::getWidth() const {
-    return impl_ ? impl_->width_ : 0;
-}
-
-int ofxNozzleSender::getHeight() const {
-    return impl_ ? impl_->height_ : 0;
 }
 
 bool ofxNozzleSender::isSetup() const {

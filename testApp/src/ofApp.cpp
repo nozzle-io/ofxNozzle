@@ -14,7 +14,8 @@ void ofApp::run() {
         ofxNozzleReceiver receiver;
         ofxTest(receiver.setup("nonexistent-sender-xyz"), "receiver no sender: setup succeeds");
         ofxTest(!receiver.isConnected(), "receiver no sender: not connected");
-        ofxTest(!receiver.receive(), "receiver no sender: receive returns false");
+        receiver.update();
+        ofxTest(!receiver.isConnected(), "receiver no sender: update does not connect");
         receiver.close();
     }
 }

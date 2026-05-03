@@ -12,15 +12,16 @@ void ofApp::run() {
         sender.end();
         ofxTest(true, "gl sender: begin/end without crash");
 
-        sender.publish();
-        ofxTest(true, "gl sender: publish without crash");
+        sender.update();
+        ofxTest(true, "gl sender: update without crash");
 
         ofxNozzleReceiver receiver;
         ofxTest(receiver.setup("gl-test-sender"), "gl receiver: setup");
 
         bool received = false;
         for (int i = 0; i < 100; i++) {
-            if (receiver.receive()) {
+            receiver.update();
+            if (receiver.isConnected() && receiver.getTexture().isAllocated()) {
                 received = true;
                 break;
             }

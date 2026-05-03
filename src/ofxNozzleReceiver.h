@@ -6,33 +6,40 @@
 #include <string>
 
 #include "ofTexture.h"
+#include "ofGLBaseTypes.h"
+#include "ofGraphicsBaseTypes.h"
 
-#ifndef GL_BGRA8_EXT
-#define GL_BGRA8_EXT 0x93A1
-#endif
-
-class ofxNozzleReceiver {
+class ofxNozzleReceiver : public ofBaseUpdates, public ofBaseDraws, public ofBaseHasTexture {
 public:
-    ofxNozzleReceiver();
-    ~ofxNozzleReceiver();
+	ofxNozzleReceiver();
+	~ofxNozzleReceiver() override;
 
-    ofxNozzleReceiver(const ofxNozzleReceiver &) = delete;
-    ofxNozzleReceiver &operator=(const ofxNozzleReceiver &) = delete;
-    ofxNozzleReceiver(ofxNozzleReceiver &&) noexcept;
-    ofxNozzleReceiver &operator=(ofxNozzleReceiver &&) noexcept;
+	ofxNozzleReceiver(const ofxNozzleReceiver &) = delete;
+	ofxNozzleReceiver &operator=(const ofxNozzleReceiver &) = delete;
+	ofxNozzleReceiver(ofxNozzleReceiver &&) noexcept;
+	ofxNozzleReceiver &operator=(ofxNozzleReceiver &&) noexcept;
 
-    bool setup(const std::string &name, float timeoutMs = 0);
-    void close();
+	bool setup(const std::string &name, float timeoutMs = 0);
+	void close();
 
-    bool receive();
-    const ofTexture &getTexture() const;
-    void draw(float x, float y, float w, float h) const;
-    void draw(float x, float y) const;
+	// ofBaseUpdates
+	void update() override;
 
-    bool isConnected() const;
-    std::string getSenderName() const;
+	// ofBaseDraws
+	void draw(float x, float y, float w, float h) const override;
+	float getWidth() const override;
+	float getHeight() const override;
+
+	// ofBaseHasTexture
+	ofTexture &getTexture() override;
+	const ofTexture &getTexture() const override;
+	void setUseTexture(bool bUseTex) override;
+	bool isUsingTexture() const override;
+
+	bool isConnected() const;
+	std::string getSenderName() const;
 
 private:
-    struct Impl;
-    std::unique_ptr<Impl> impl_;
+	struct Impl;
+	std::unique_ptr<Impl> impl_;
 };

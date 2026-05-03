@@ -19,6 +19,7 @@ struct ofxNozzleReceiver::Impl {
     float timeout_ms_{0};
     bool setup_{false};
     bool connected_{false};
+    bool use_texture_{true};
 
     nozzle::receiver receiver_{};
     ofTexture texture_{};
@@ -270,10 +271,10 @@ void ofxNozzleReceiver::close() {
     }
 }
 
-bool ofxNozzleReceiver::receive() {
+void ofxNozzleReceiver::update() {
     if (!impl_ || !impl_->setup_) {
-        ofLogError("ofxNozzleReceiver") << "receive() called but not set up";
-        return false;
+        ofLogError("ofxNozzleReceiver") << "update() called but not set up";
+        return;
     }
 
     if (!impl_->connected_) {
@@ -283,7 +284,7 @@ bool ofxNozzleReceiver::receive() {
 
         auto result = nozzle::receiver::create(recv_desc);
         if (!result.ok()) {
-            return false;
+            return;
         }
 
         impl_->receiver_ = std::move(result.value());
@@ -296,7 +297,7 @@ bool ofxNozzleReceiver::receive() {
         impl_->connected_ = false;
         impl_->receiver_ = nozzle::receiver{};
         ofLogWarning("ofxNozzleReceiver") << "sender disconnected";
-        return false;
+        return;
     }
 
     nozzle::acquire_desc acquire{};
@@ -310,25 +311,27 @@ bool ofxNozzleReceiver::receive() {
                 impl_->connected_ = false;
                 impl_->receiver_ = nozzle::receiver{};
             }
-            return false;
+            return;
         }
         ofLogError("ofxNozzleReceiver") << "acquire_frame failed: "
             << frame_result.error().message;
         impl_->connected_ = false;
         impl_->receiver_ = nozzle::receiver{};
-        return false;
+        return;
     }
 
     auto &frame = frame_result.value();
-    bool ok = impl_->update_texture_from_frame(frame);
+    impl_->update_texture_from_frame(frame);
     frame.release();
-
-    return ok;
 }
 
 const ofTexture &ofxNozzleReceiver::getTexture() const {
     static const ofTexture empty_texture;
     return impl_ ? impl_->texture_ : empty_texture;
+}
+
+ofTexture &ofxNozzleReceiver::getTexture() {
+    return impl_ ? impl_->texture_ : *const_cast<ofTexture *>(&std::as_const(*this).getTexture());
 }
 
 void ofxNozzleReceiver::draw(float x, float y, float w, float h) const {
@@ -337,10 +340,22 @@ void ofxNozzleReceiver::draw(float x, float y, float w, float h) const {
     }
 }
 
-void ofxNozzleReceiver::draw(float x, float y) const {
-    if (impl_ && impl_->texture_.isAllocated()) {
-        impl_->texture_.draw(x, y);
+float ofxNozzleReceiver::getWidth() const {
+    return impl_ ? static_cast<float>(impl_->current_width_) : 0.f;
+}
+
+float ofxNozzleReceiver::getHeight() const {
+    return impl_ ? static_cast<float>(impl_->current_height_) : 0.f;
+}
+
+void ofxNozzleReceiver::setUseTexture(bool bUseTex) {
+    if (impl_) {
+        impl_->use_texture_ = bUseTex;
     }
+}
+
+bool ofxNozzleReceiver::isUsingTexture() const {
+    return impl_ ? impl_->use_texture_ : true;
 }
 
 bool ofxNozzleReceiver::isConnected() const {

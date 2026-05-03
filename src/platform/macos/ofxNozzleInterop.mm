@@ -29,9 +29,9 @@ static bool gl_internal_format_to_iosurface_pixel_format(
     switch (gl_internal_format) {
         case GL_BGRA8_EXT:
         case GL_RGBA8:
-            // Use RGBA for 8-bit IOSurface so GL (RGBA) and Metal (RGBA)
-            // agree on byte order. Avoids R/B channel swap at any stage.
-            out_iosurface_pf = 0x52474241; // kCVPixelFormatType_32RGBA
+            // Always use BGRA for 8-bit IOSurface — CGLTexImageIOSurface2D
+            // requires GL_RGBA8 internal format with GL_BGRA pixel format.
+            out_iosurface_pf = 0x42475241; // kCVPixelFormatType_32BGRA
             out_bytes_per_element = 4;
             return true;
         case GL_RGBA16F:
@@ -73,7 +73,7 @@ static MTLPixelFormat nozzle_format_to_mtl(uint32_t nozzle_pixel_format) {
 
 static uint32_t gl_format_to_nozzle_format(uint32_t gl_internal_format) {
     switch (gl_internal_format) {
-        case GL_BGRA8_EXT: return 3; // rgba8_unorm (IOSurface is RGBA)
+        case GL_BGRA8_EXT: return 4; // bgra8_unorm
         case GL_RGBA8:     return 3; // rgba8_unorm
         case GL_RGBA16F:   return 12; // rgba16_float
         case GL_RGBA32F:   return 15; // rgba32_float
@@ -152,10 +152,9 @@ uint32_t ofxNozzleCreateGLTextureFromIOSurface(
     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gl_tex);
 
     // CGLTexImageIOSurface2D does not accept GL_BGRA8_EXT as internal format.
-    // Use GL_RGBA8 for all 8-bit formats. With RGBA IOSurface, GL_RGBA format
-    // ensures byte order matches between GL and Metal.
-    GLenum gl_format = GL_RGBA;
-    GLenum gl_type = GL_UNSIGNED_BYTE;
+    // Use GL_RGBA8 for all 8-bit formats (BGRA channel ordering via GL_BGRA format).
+    GLenum gl_format = GL_BGRA;
+    GLenum gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
     GLenum cgl_internal_format = GL_RGBA8;
 
     if (gl_internal_format == GL_RGBA16F) {

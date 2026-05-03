@@ -200,6 +200,7 @@ bool ofxNozzleSender::setup(
     wrap_desc.format = impl_->interop_.pixel_format;
     wrap_desc.width = static_cast<uint32_t>(width);
     wrap_desc.height = static_cast<uint32_t>(height);
+    wrap_desc.swizzle = nozzle::channel_swizzle::swap_rb;
 
     auto tex_result = nozzle::metal::wrap_texture(wrap_desc);
     if (!tex_result.ok()) {

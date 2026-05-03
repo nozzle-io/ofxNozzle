@@ -100,6 +100,17 @@ class ofApp : public ofBaseApp {
 | `isConnected()` | Check if sender is alive |
 | `getSenderName()` | Get connected sender's name |
 
+## Supported GL Formats
+
+| GL Internal Format | nozzle format | macOS | Windows | Linux |
+|---------------------|---------------|-------|---------|-------|
+| `GL_RGBA8` | `rgba8_unorm` | ✅ | ✅ | ✅ |
+| `GL_BGRA8_EXT` | `bgra8_unorm` | ✅ | ✅ | ✅ |
+| `GL_RGBA16F` | `rgba16_float` | ✅ | ✅ | ✅ |
+| `GL_RGBA32F` | `rgba32_float` | ✅ | ✅ | ✅ |
+
+Unsized formats (`GL_RGBA`, `GL_BGRA`, `GL_RGB`) and 3-channel formats (`GL_RGB8`) are normalized to their 4-channel RGBA equivalents automatically.
+
 ## Architecture
 
 All Objective-C types are hidden behind pimpl. Headers are pure C++.

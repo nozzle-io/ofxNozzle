@@ -13,9 +13,43 @@
 
 namespace {
 
+const char *gl_format_name(int fmt) {
+    switch (fmt) {
+        case GL_RED:            return "GL_RED";
+        case GL_RG:             return "GL_RG";
+        case GL_RGB:            return "GL_RGB";
+        case GL_RGBA:           return "GL_RGBA";
+        case GL_BGRA:           return "GL_BGRA";
+        case GL_R8:             return "GL_R8";
+        case GL_RG8:            return "GL_RG8";
+        case GL_RGB8:           return "GL_RGB8";
+        case GL_RGBA8:          return "GL_RGBA8";
+        case GL_BGRA8_EXT:      return "GL_BGRA8_EXT";
+        case GL_SRGB8_ALPHA8:   return "GL_SRGB8_ALPHA8";
+        case GL_R16:            return "GL_R16";
+        case GL_RG16:           return "GL_RG16";
+        case GL_RGBA16:         return "GL_RGBA16";
+        case GL_R16F:           return "GL_R16F";
+        case GL_RG16F:          return "GL_RG16F";
+        case GL_RGBA16F:        return "GL_RGBA16F";
+        case GL_R32F:           return "GL_R32F";
+        case GL_RG32F:          return "GL_RG32F";
+        case GL_RGBA32F:        return "GL_RGBA32F";
+        default:                return "unknown";
+    }
+}
+
+std::string gl_format_str(int fmt) {
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%s (0x%x)", gl_format_name(fmt), fmt);
+    return buf;
+}
+
 int normalize_gl_format(int gl_fmt) {
     switch (gl_fmt) {
         case GL_RGBA:    return GL_RGBA8;
+        case GL_RGB:     return GL_RGBA8;
+        case GL_RGB8:    return GL_RGBA8;
 #ifdef GL_BGRA
         case GL_BGRA:    return GL_BGRA8_EXT;
 #endif
@@ -25,9 +59,19 @@ int normalize_gl_format(int gl_fmt) {
 
 bool is_supported_gl_format(int gl_fmt) {
     switch (gl_fmt) {
+        case GL_R8:
+        case GL_RG8:
         case GL_RGBA8:
         case GL_BGRA8_EXT:
+        case GL_SRGB8_ALPHA8:
+        case GL_R16:
+        case GL_RG16:
+        case GL_RGBA16:
+        case GL_R16F:
+        case GL_RG16F:
         case GL_RGBA16F:
+        case GL_R32F:
+        case GL_RG32F:
         case GL_RGBA32F:
             return true;
         default:
@@ -37,11 +81,21 @@ bool is_supported_gl_format(int gl_fmt) {
 
 nozzle::texture_format gl_format_to_nozzle(int gl_fmt) {
     switch (gl_fmt) {
-        case GL_BGRA8_EXT: return nozzle::texture_format::bgra8_unorm;
-        case GL_RGBA8:     return nozzle::texture_format::rgba8_unorm;
-        case GL_RGBA16F:   return nozzle::texture_format::rgba16_float;
-        case GL_RGBA32F:   return nozzle::texture_format::rgba32_float;
-        default:           return nozzle::texture_format::rgba8_unorm;
+        case GL_R8:            return nozzle::texture_format::r8_unorm;
+        case GL_RG8:           return nozzle::texture_format::rg8_unorm;
+        case GL_RGBA8:         return nozzle::texture_format::rgba8_unorm;
+        case GL_BGRA8_EXT:     return nozzle::texture_format::bgra8_unorm;
+        case GL_SRGB8_ALPHA8:  return nozzle::texture_format::rgba8_srgb;
+        case GL_R16:           return nozzle::texture_format::r16_unorm;
+        case GL_RG16:          return nozzle::texture_format::rg16_unorm;
+        case GL_RGBA16:        return nozzle::texture_format::rgba16_unorm;
+        case GL_R16F:          return nozzle::texture_format::r16_float;
+        case GL_RG16F:         return nozzle::texture_format::rg16_float;
+        case GL_RGBA16F:       return nozzle::texture_format::rgba16_float;
+        case GL_R32F:          return nozzle::texture_format::r32_float;
+        case GL_RG32F:         return nozzle::texture_format::rg32_float;
+        case GL_RGBA32F:       return nozzle::texture_format::rgba32_float;
+        default:               return nozzle::texture_format::rgba8_unorm;
     }
 }
 
@@ -51,6 +105,7 @@ struct ofxNozzleSender::Impl {
     std::string name_{};
     bool setup_{false};
     nozzle::sender sender_{};
+    int last_published_gl_format_{-1};
 
     ~Impl() { close(); }
 
@@ -144,9 +199,16 @@ bool ofxNozzleSender::publishTexture(
     }
 
     int fmt = normalize_gl_format(glInternalFormat);
+
+    if (fmt != glInternalFormat && fmt != impl_->last_published_gl_format_) {
+        ofLogNotice("ofxNozzleSender") << gl_format_str(glInternalFormat)
+            << " normalized to " << gl_format_str(fmt);
+        impl_->last_published_gl_format_ = fmt;
+    }
+
     if (!is_supported_gl_format(fmt)) {
-        ofLogWarning("ofxNozzleSender") << "unsupported GL format: 0x"
-            << std::hex << glInternalFormat;
+        ofLogWarning("ofxNozzleSender") << "unsupported GL format: "
+            << gl_format_str(glInternalFormat);
         return false;
     }
 

@@ -17,9 +17,40 @@
 
 namespace {
 
+const char *gl_format_name(int fmt) {
+    switch (fmt) {
+        case GL_RED:            return "GL_RED";
+        case GL_RG:             return "GL_RG";
+        case GL_RGB:            return "GL_RGB";
+        case GL_RGBA:           return "GL_RGBA";
+        case GL_BGRA:           return "GL_BGRA";
+        case GL_R8:             return "GL_R8";
+        case GL_RG8:            return "GL_RG8";
+        case GL_RGB8:           return "GL_RGB8";
+        case GL_RGBA8:          return "GL_RGBA8";
+        case GL_BGRA8_EXT:      return "GL_BGRA8_EXT";
+        case GL_SRGB8_ALPHA8:   return "GL_SRGB8_ALPHA8";
+        case GL_R16F:           return "GL_R16F";
+        case GL_RG16F:          return "GL_RG16F";
+        case GL_RGBA16F:        return "GL_RGBA16F";
+        case GL_R32F:           return "GL_R32F";
+        case GL_RG32F:          return "GL_RG32F";
+        case GL_RGBA32F:        return "GL_RGBA32F";
+        default:                return "unknown";
+    }
+}
+
+std::string gl_format_str(int fmt) {
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%s (0x%x)", gl_format_name(fmt), fmt);
+    return buf;
+}
+
 int normalize_gl_format(int gl_fmt) {
     switch (gl_fmt) {
         case GL_RGBA:    return GL_RGBA8;
+        case GL_RGB:     return GL_RGBA8;
+        case GL_RGB8:    return GL_RGBA8;
 #ifdef GL_BGRA
         case GL_BGRA:    return GL_BGRA8_EXT;
 #endif
@@ -29,9 +60,17 @@ int normalize_gl_format(int gl_fmt) {
 
 bool is_supported_gl_format(int gl_fmt) {
     switch (gl_fmt) {
+        case GL_R8:
+        case GL_RG8:
         case GL_RGBA8:
         case GL_BGRA8_EXT:
+        case GL_SRGB8_ALPHA8:
+        case GL_R16F:
+        case GL_RG16F:
         case GL_RGBA16F:
+        case GL_R32F:
+        case GL_RG32F:
+        case GL_RGBA32F:
             return true;
         default:
             return false;
@@ -40,15 +79,97 @@ bool is_supported_gl_format(int gl_fmt) {
 
 nozzle::texture_format gl_format_to_nozzle(uint32_t gl_format) {
     switch (gl_format) {
+        case GL_R8:            return nozzle::texture_format::r8_unorm;
+        case GL_RG8:           return nozzle::texture_format::rg8_unorm;
+        case GL_RGBA8:         return nozzle::texture_format::rgba8_unorm;
+        case GL_BGRA8_EXT:     return nozzle::texture_format::bgra8_unorm;
+        case GL_SRGB8_ALPHA8:  return nozzle::texture_format::rgba8_srgb;
+        case GL_R16F:          return nozzle::texture_format::r16_float;
+        case GL_RG16F:         return nozzle::texture_format::rg16_float;
+        case GL_RGBA16F:       return nozzle::texture_format::rgba16_float;
+        case GL_R32F:          return nozzle::texture_format::r32_float;
+        case GL_RG32F:         return nozzle::texture_format::rg32_float;
+        case GL_RGBA32F:       return nozzle::texture_format::rgba32_float;
+        default:               return nozzle::texture_format::bgra8_unorm;
+    }
+}
+
+uint32_t gl_format_bytes_per_pixel(uint32_t gl_format) {
+    switch (gl_format) {
+        case GL_R8:            return 1;
+        case GL_RG8:           return 2;
+        case GL_R16F:          return 2;
+        case GL_R32F:          return 4;
+        case GL_RG16F:         return 4;
+        case GL_RG32F:         return 8;
+        case GL_RGBA16F:       return 8;
+        case GL_RGBA32F:       return 16;
+        default:               return 4;
+    }
+}
+
+uint32_t nozzle_format_to_dxgi(nozzle::texture_format fmt) {
+    switch (fmt) {
+        case nozzle::texture_format::r8_unorm:       return 61;  // DXGI_FORMAT_R8_UNORM
+        case nozzle::texture_format::rg8_unorm:       return 49;  // DXGI_FORMAT_R8G8_UNORM
+        case nozzle::texture_format::bgra8_unorm:     return 87;  // DXGI_FORMAT_B8G8R8A8_UNORM
+        case nozzle::texture_format::rgba8_unorm:     return 28;  // DXGI_FORMAT_R8G8B8A8_UNORM
+        case nozzle::texture_format::r16_float:       return 56;  // DXGI_FORMAT_R16_FLOAT
+        case nozzle::texture_format::rg16_float:      return 34;  // DXGI_FORMAT_R16G16_FLOAT
+        case nozzle::texture_format::rgba16_float:    return 10;  // DXGI_FORMAT_R16G16B16A16_FLOAT
+        case nozzle::texture_format::r32_float:       return 41;  // DXGI_FORMAT_R32_FLOAT
+        case nozzle::texture_format::rg32_float:      return 16;  // DXGI_FORMAT_R32G32_FLOAT
+        case nozzle::texture_format::rgba32_float:    return 2;   // DXGI_FORMAT_R32G32B32A32_FLOAT
+        default: return 87;  // DXGI_FORMAT_B8G8R8A8_UNORM
+    }
+}
+
+GLenum gl_read_format(uint32_t gl_format) {
+    switch (gl_format) {
+        case GL_R8:
+        case GL_R16F:
+        case GL_R32F:          return GL_RED;
+        case GL_RG8:
+        case GL_RG16F:
+        case GL_RG32F:         return GL_RG;
+        case GL_RGBA32F:
+        case GL_RGBA16F:
+        case GL_RGBA8:
+        case GL_SRGB8_ALPHA8:  return GL_RGBA;
+        default:               return GL_BGRA;
+    }
+}
+
+GLenum gl_read_type(uint32_t gl_format) {
+    switch (gl_format) {
+        case GL_R16F:
+        case GL_RG16F:
+        case GL_RGBA16F:       return GL_HALF_FLOAT;
+        case GL_R32F:
+        case GL_RG32F:
+        case GL_RGBA32F:       return GL_FLOAT;
+        case GL_R8:
+        case GL_RG8:
+        case GL_RGBA8:
+        case GL_SRGB8_ALPHA8:
+        default:               return GL_UNSIGNED_BYTE;
+    }
+}
+}
+
+nozzle::texture_format gl_format_to_nozzle(uint32_t gl_format) {
+    switch (gl_format) {
         case GL_BGRA8_EXT: return nozzle::texture_format::bgra8_unorm;
         case GL_RGBA8:     return nozzle::texture_format::rgba8_unorm;
         case GL_RGBA16F:   return nozzle::texture_format::rgba16_float;
+        case GL_RGBA32F:   return nozzle::texture_format::rgba32_float;
         default:           return nozzle::texture_format::bgra8_unorm;
     }
 }
 
 uint32_t gl_format_bytes_per_pixel(uint32_t gl_format) {
     switch (gl_format) {
+        case GL_RGBA32F: return 16;
         case GL_RGBA16F: return 8;
         default:         return 4;
     }
@@ -56,16 +177,18 @@ uint32_t gl_format_bytes_per_pixel(uint32_t gl_format) {
 
 uint32_t nozzle_format_to_dxgi(nozzle::texture_format fmt) {
     switch (fmt) {
-        case nozzle::texture_format::bgra8_unorm: return 87; // DXGI_FORMAT_B8G8R8A8_UNORM
-        case nozzle::texture_format::rgba8_unorm: return 28; // DXGI_FORMAT_R8G8B8A8_UNORM
-        case nozzle::texture_format::rgba16_float: return 10; // DXGI_FORMAT_R16G16B16A16_FLOAT
+        case nozzle::texture_format::bgra8_unorm:  return 87; // DXGI_FORMAT_B8G8R8A8_UNORM
+        case nozzle::texture_format::rgba8_unorm:   return 28; // DXGI_FORMAT_R8G8B8A8_UNORM
+        case nozzle::texture_format::rgba16_float:  return 10; // DXGI_FORMAT_R16G16B16A16_FLOAT
+        case nozzle::texture_format::rgba32_float:  return 2;  // DXGI_FORMAT_R32G32B32A32_FLOAT
         default: return 87; // DXGI_FORMAT_B8G8R8A8_UNORM
     }
 }
 
 GLenum gl_read_format(uint32_t gl_format) {
     switch (gl_format) {
-        case GL_RGBA16F: return GL_RGBA;
+        case GL_RGBA32F:
+        case GL_RGBA16F:
         case GL_RGBA8:   return GL_RGBA;
         default:         return GL_BGRA;
     }
@@ -73,6 +196,7 @@ GLenum gl_read_format(uint32_t gl_format) {
 
 GLenum gl_read_type(uint32_t gl_format) {
     switch (gl_format) {
+        case GL_RGBA32F: return GL_FLOAT;
         case GL_RGBA16F: return GL_HALF_FLOAT;
         case GL_RGBA8:   return GL_UNSIGNED_BYTE;
         default:         return GL_UNSIGNED_BYTE;
@@ -86,6 +210,7 @@ struct ofxNozzleSender::Impl {
     bool setup_{false};
 
     nozzle::sender sender_{};
+    int last_published_gl_format_{-1};
 
     GLuint temp_fbo_{0};
     GLint saved_fbo_{0};
@@ -200,9 +325,16 @@ bool ofxNozzleSender::publishTexture(
     }
 
     int fmt = normalize_gl_format(glInternalFormat);
+
+    if (fmt != glInternalFormat && fmt != impl_->last_published_gl_format_) {
+        ofLogNotice("ofxNozzleSender") << gl_format_str(glInternalFormat)
+            << " normalized to " << gl_format_str(fmt);
+        impl_->last_published_gl_format_ = fmt;
+    }
+
     if (!is_supported_gl_format(fmt)) {
-        ofLogWarning("ofxNozzleSender") << "unsupported GL format: 0x"
-            << std::hex << glInternalFormat;
+        ofLogWarning("ofxNozzleSender") << "unsupported GL format: "
+            << gl_format_str(glInternalFormat);
         return false;
     }
 

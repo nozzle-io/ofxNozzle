@@ -48,7 +48,7 @@ struct ofxNozzleSender::Impl {
     GLuint fbo_id_{0};
     GLuint gl_tex_{0};
     GLint saved_fbo_{0};
-    GLint saved_viewport[4]{};
+    ofRectangle saved_of_viewport_{};
     nozzle::sender sender_{};
     ofTexture texture_{};
     nozzle::texture_format nozzle_format_{nozzle::texture_format::bgra8_unorm};
@@ -190,8 +190,8 @@ void ofxNozzleSender::begin() {
         return;
     }
 
+    impl_->saved_of_viewport_ = ofGetCurrentViewport();
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &impl_->saved_fbo_);
-    glGetIntegerv(GL_VIEWPORT, impl_->saved_viewport);
 
     glBindFramebuffer(GL_FRAMEBUFFER, impl_->fbo_id_);
     ofViewport(0, 0, impl_->width_, impl_->height_, false);
@@ -205,11 +205,7 @@ void ofxNozzleSender::end() {
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, impl_->saved_fbo_);
-    glViewport(
-        impl_->saved_viewport[0],
-        impl_->saved_viewport[1],
-        impl_->saved_viewport[2],
-        impl_->saved_viewport[3]);
+    ofViewport(impl_->saved_of_viewport_);
     ofSetupScreen();
 }
 

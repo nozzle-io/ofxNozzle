@@ -28,15 +28,14 @@ static bool gl_internal_format_to_iosurface_pixel_format(
 {
     switch (gl_internal_format) {
         case GL_BGRA8_EXT:
+        case GL_RGBA8:
+            // Always use BGRA for 8-bit IOSurface — CGLTexImageIOSurface2D
+            // requires GL_RGBA8 internal format with GL_BGRA pixel format.
             out_iosurface_pf = 0x42475241; // kCVPixelFormatType_32BGRA
             out_bytes_per_element = 4;
             return true;
-        case GL_RGBA8:
-            out_iosurface_pf = 0x52474241; // kCVPixelFormatType_32RGBA
-            out_bytes_per_element = 4;
-            return true;
         case GL_RGBA16F:
-            out_iosurface_pf = 0x52476841; // 'RGhA' little-endian RGBA16F
+            out_iosurface_pf = 0x52476841; // kCVPixelFormatType_64RGBAHalfFloat
             out_bytes_per_element = 8;
             return true;
         default:
@@ -146,21 +145,22 @@ uint32_t ofxNozzleCreateGLTextureFromIOSurface(
 
     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gl_tex);
 
+    // CGLTexImageIOSurface2D does not accept GL_BGRA8_EXT as internal format.
+    // Use GL_RGBA8 for all 8-bit formats (BGRA channel ordering via GL_BGRA format).
     GLenum gl_format = GL_BGRA;
     GLenum gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
-    if (gl_internal_format == GL_RGBA8 || gl_internal_format == GL_RGBA16F) {
+    GLenum cgl_internal_format = GL_RGBA8;
+
+    if (gl_internal_format == GL_RGBA16F) {
         gl_format = GL_RGBA;
-        if (gl_internal_format == GL_RGBA16F) {
-            gl_type = GL_HALF_FLOAT;
-        } else {
-            gl_type = GL_UNSIGNED_BYTE;
-        }
+        gl_type = GL_HALF_FLOAT;
+        cgl_internal_format = GL_RGBA16F;
     }
 
     CGLError err = CGLTexImageIOSurface2D(
         CGLGetCurrentContext(),
         GL_TEXTURE_RECTANGLE_ARB,
-        gl_internal_format,
+        cgl_internal_format,
         static_cast<GLsizei>(width),
         static_cast<GLsizei>(height),
         gl_format,
@@ -171,7 +171,10 @@ uint32_t ofxNozzleCreateGLTextureFromIOSurface(
     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
 
     if (err != kCGLNoError) {
-        ofLogError("ofxNozzleInterop") << "CGLTexImageIOSurface2D failed: " << CGLErrorString(err);
+        ofLogError("ofxNozzleInterop") << "CGLTexImageIOSurface2D failed: " << CGLErrorString(err)
+            << " (code=" << std::dec << err << ")"
+            << " internal_format=0x" << std::hex << cgl_internal_format
+            << " surface_pf=0x" << IOSurfaceGetPixelFormat(surface);
         glDeleteTextures(1, &gl_tex);
         return 0;
     }

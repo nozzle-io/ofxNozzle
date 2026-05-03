@@ -6,7 +6,7 @@ endif
 
 # make sure the the OF_ROOT location is defined
 ifndef OF_ROOT
-	OF_ROOT=/Users/2bit/prog/of/v0.12.1_osx
+	OF_ROOT=../../..
 endif
 
 # call the project makefile!

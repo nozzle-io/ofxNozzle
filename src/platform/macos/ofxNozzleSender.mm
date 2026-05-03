@@ -112,20 +112,20 @@ bool ofxNozzleSender::setup(
     impl_->nozzle_format_ = gl_format_to_nozzle(glInternalFormat);
 
     glGenTextures(1, &impl_->gl_tex_);
-    glBindTexture(GL_TEXTURE_2D, impl_->gl_tex_);
-    glTexImage2D(GL_TEXTURE_2D, 0, internal_fmt, width, height, 0,
+    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, impl_->gl_tex_);
+    glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, internal_fmt, width, height, 0,
                  GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_RECTANGLE_ARB, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
 
     glGenFramebuffers(1, &impl_->fbo_id_);
     glBindFramebuffer(GL_FRAMEBUFFER, impl_->fbo_id_);
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-        GL_TEXTURE_2D, impl_->gl_tex_, 0);
+        GL_TEXTURE_RECTANGLE_ARB, impl_->gl_tex_, 0);
 
     GLenum fbo_status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -143,7 +143,7 @@ bool ofxNozzleSender::setup(
 
     impl_->texture_.setUseExternalTextureID(impl_->gl_tex_);
     auto &td = impl_->texture_.texData;
-    td.textureTarget = GL_TEXTURE_2D;
+    td.textureTarget = GL_TEXTURE_RECTANGLE_ARB;
     td.width = static_cast<float>(width);
     td.height = static_cast<float>(height);
     td.tex_w = static_cast<float>(width);
@@ -194,7 +194,8 @@ void ofxNozzleSender::begin() {
     glGetIntegerv(GL_VIEWPORT, impl_->saved_viewport);
 
     glBindFramebuffer(GL_FRAMEBUFFER, impl_->fbo_id_);
-    glViewport(0, 0, impl_->width_, impl_->height_);
+    ofViewport(0, 0, impl_->width_, impl_->height_, false);
+    ofSetupScreen();
 }
 
 void ofxNozzleSender::end() {
@@ -209,6 +210,7 @@ void ofxNozzleSender::end() {
         impl_->saved_viewport[1],
         impl_->saved_viewport[2],
         impl_->saved_viewport[3]);
+    ofSetupScreen();
 }
 
 void ofxNozzleSender::update() {
@@ -221,7 +223,7 @@ void ofxNozzleSender::update() {
 
     nozzle::gl::gl_texture_desc gl_desc{};
     gl_desc.name = impl_->gl_tex_;
-    gl_desc.target = GL_TEXTURE_2D;
+    gl_desc.target = GL_TEXTURE_RECTANGLE_ARB;
     gl_desc.width = static_cast<uint32_t>(impl_->width_);
     gl_desc.height = static_cast<uint32_t>(impl_->height_);
     gl_desc.format = impl_->nozzle_format_;

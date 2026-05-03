@@ -220,6 +220,7 @@ bool ofxNozzleSender::publishTexture(
     gl_desc.width = static_cast<uint32_t>(width);
     gl_desc.height = static_cast<uint32_t>(height);
     gl_desc.format = gl_format_to_nozzle(fmt);
+    gl_desc.origin = nozzle::texture_origin::bottom_left;
 
     auto result = nozzle::gl::publish_gl_texture(impl_->sender_, gl_desc);
     if (!result.ok()) {

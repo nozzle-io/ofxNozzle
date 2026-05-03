@@ -38,6 +38,10 @@ static bool gl_internal_format_to_iosurface_pixel_format(
             out_iosurface_pf = 0x52476841; // kCVPixelFormatType_64RGBAHalfFloat
             out_bytes_per_element = 8;
             return true;
+        case GL_RGBA32F:
+            out_iosurface_pf = 'RGfA'; // kCVPixelFormatType_128RGBAFloat
+            out_bytes_per_element = 16;
+            return true;
         default:
             return false;
     }
@@ -72,6 +76,7 @@ static uint32_t gl_format_to_nozzle_format(uint32_t gl_internal_format) {
         case GL_BGRA8_EXT: return 4; // bgra8_unorm
         case GL_RGBA8:     return 3; // rgba8_unorm
         case GL_RGBA16F:   return 12; // rgba16_float
+        case GL_RGBA32F:   return 15; // rgba32_float
         default:           return 3; // fallback to rgba8_unorm
     }
 }
@@ -155,6 +160,10 @@ uint32_t ofxNozzleCreateGLTextureFromIOSurface(
         gl_format = GL_RGBA;
         gl_type = GL_HALF_FLOAT;
         cgl_internal_format = GL_RGBA16F;
+    } else if (gl_internal_format == GL_RGBA32F) {
+        gl_format = GL_RGBA;
+        gl_type = GL_FLOAT;
+        cgl_internal_format = GL_RGBA32F;
     }
 
     CGLError err = CGLTexImageIOSurface2D(

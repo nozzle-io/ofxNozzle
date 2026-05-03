@@ -97,6 +97,11 @@ struct ofxNozzleReceiver::Impl {
                 gl_format = GL_RGBA;
                 gl_type = GL_HALF_FLOAT;
                 break;
+            case nozzle::texture_format::rgba32_float:
+                gl_internal_format = GL_RGBA32F;
+                gl_format = GL_RGBA;
+                gl_type = GL_FLOAT;
+                break;
             default:
                 // Fallback to BGRA
                 break;

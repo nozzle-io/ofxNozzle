@@ -155,55 +155,6 @@ GLenum gl_read_type(uint32_t gl_format) {
         case GL_SRGB8_ALPHA8:
         default:               return GL_UNSIGNED_BYTE;
     }
-}
-}
-
-nozzle::texture_format gl_format_to_nozzle(uint32_t gl_format) {
-    switch (gl_format) {
-        case GL_BGRA8_EXT: return nozzle::texture_format::bgra8_unorm;
-        case GL_RGBA8:     return nozzle::texture_format::rgba8_unorm;
-        case GL_RGBA16F:   return nozzle::texture_format::rgba16_float;
-        case GL_RGBA32F:   return nozzle::texture_format::rgba32_float;
-        default:           return nozzle::texture_format::bgra8_unorm;
-    }
-}
-
-uint32_t gl_format_bytes_per_pixel(uint32_t gl_format) {
-    switch (gl_format) {
-        case GL_RGBA32F: return 16;
-        case GL_RGBA16F: return 8;
-        default:         return 4;
-    }
-}
-
-uint32_t nozzle_format_to_dxgi(nozzle::texture_format fmt) {
-    switch (fmt) {
-        case nozzle::texture_format::bgra8_unorm:  return 87; // DXGI_FORMAT_B8G8R8A8_UNORM
-        case nozzle::texture_format::rgba8_unorm:   return 28; // DXGI_FORMAT_R8G8B8A8_UNORM
-        case nozzle::texture_format::rgba16_float:  return 10; // DXGI_FORMAT_R16G16B16A16_FLOAT
-        case nozzle::texture_format::rgba32_float:  return 2;  // DXGI_FORMAT_R32G32B32A32_FLOAT
-        default: return 87; // DXGI_FORMAT_B8G8R8A8_UNORM
-    }
-}
-
-GLenum gl_read_format(uint32_t gl_format) {
-    switch (gl_format) {
-        case GL_RGBA32F:
-        case GL_RGBA16F:
-        case GL_RGBA8:   return GL_RGBA;
-        default:         return GL_BGRA;
-    }
-}
-
-GLenum gl_read_type(uint32_t gl_format) {
-    switch (gl_format) {
-        case GL_RGBA32F: return GL_FLOAT;
-        case GL_RGBA16F: return GL_HALF_FLOAT;
-        case GL_RGBA8:   return GL_UNSIGNED_BYTE;
-        default:         return GL_UNSIGNED_BYTE;
-    }
-}
-
 } // namespace
 
 struct ofxNozzleSender::Impl {

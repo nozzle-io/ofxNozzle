@@ -157,6 +157,8 @@ GLenum gl_read_type(uint32_t gl_format) {
     }
 }
 
+} // namespace
+
 struct ofxNozzleSender::Impl {
     std::string name_{};
     bool setup_{false};

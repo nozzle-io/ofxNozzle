@@ -155,7 +155,7 @@ GLenum gl_read_type(uint32_t gl_format) {
         case GL_SRGB8_ALPHA8:
         default:               return GL_UNSIGNED_BYTE;
     }
-} // namespace
+}
 
 struct ofxNozzleSender::Impl {
     std::string name_{};

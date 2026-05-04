@@ -5,7 +5,7 @@
 #include <windows.h>
 #include <d3d11.h>
 #include <dxgi.h>
-#include <GL/glew.h>
+#include "ofMain.h"
 
 #include "ofxNozzleSender.h"
 

@@ -15,6 +15,7 @@ jobs:
       test_app: "testApp"
       test_mode: "test"
       configs: '["Debug", "Release"]'
+      cache_key_suffix: "v2"
       preprocessor_defines: "NOZZLE_PLATFORM_WINDOWS=1;NOZZLE_HAS_D3D11=1;NOZZLE_HAS_OPENGL=1"
 
   # GL tests need GPU — run gl_testApp locally on real hardware

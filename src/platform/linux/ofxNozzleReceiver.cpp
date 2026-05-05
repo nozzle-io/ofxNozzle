@@ -109,6 +109,9 @@ struct ofxNozzleReceiver::Impl {
             case nozzle::texture_format::rg16_float:
             case nozzle::texture_format::rg32_float:
                 return GL_RG;
+            case nozzle::texture_format::bgra8_unorm:
+            case nozzle::texture_format::bgra8_srgb:
+                return GL_BGRA;
             default:
                 return GL_RGBA;
         }

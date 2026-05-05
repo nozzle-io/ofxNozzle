@@ -169,6 +169,10 @@ struct ofxNozzleReceiver::Impl {
                 break;
             // depth (no color mapping, fallback to BGRA8)
             case nozzle::texture_format::depth32_float:
+                gl_internal_format = GL_R32F;
+                gl_format = GL_RED;
+                gl_type = GL_FLOAT;
+                break;
             default:
                 break;
         }

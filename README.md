@@ -158,6 +158,7 @@ The receiver maps nozzle formats to GL texture parameters for `CGLTexImageIOSurf
 | `rgba32_float` | `GL_RGBA32F` | `GL_RGBA` | `GL_FLOAT` | |
 | `r32_uint` | `GL_R32UI` | `GL_RED_INTEGER` | `GL_UNSIGNED_INT` | |
 | `rgba32_uint` | `GL_RGBA32UI` | `GL_RGBA_INTEGER` | `GL_UNSIGNED_INT` | |
+| `depth32_float` | `GL_R32F` | `GL_RED` | `GL_FLOAT` | Single channel fallback |
 
 Integer textures require a custom shader with `usampler2D` / `texelFetch()` for correct sampling. The default openFrameworks shader will not render uint data correctly.
 

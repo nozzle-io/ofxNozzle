@@ -14,6 +14,7 @@
 #include "ofLog.h"
 
 #include <unordered_map>
+#include <vector>
 
 struct ofxNozzleReceiver::Impl {
     std::string sender_name_{};
@@ -118,11 +119,11 @@ struct ofxNozzleReceiver::Impl {
                 gl_format = GL_RG;
                 gl_type = GL_UNSIGNED_SHORT;
                 break;
-            // 16-bit unorm RGBA (CGLTexImageIOSurface2D has no GL_RGBA16, fallback to half-float)
+            // 16-bit unorm RGBA (CGL has no GL_RGBA16, widen to uint32 via GL_RGBA32UI)
             case nozzle::texture_format::rgba16_unorm:
-                gl_internal_format = GL_RGBA16F;
-                gl_format = GL_RGBA;
-                gl_type = GL_HALF_FLOAT;
+                gl_internal_format = GL_RGBA32UI;
+                gl_format = GL_RGBA_INTEGER;
+                gl_type = GL_UNSIGNED_INT;
                 break;
             // 16-bit float
             case nozzle::texture_format::r16_float:
@@ -190,8 +191,39 @@ struct ofxNozzleReceiver::Impl {
                 gl_texture_cache_.erase(oldest);
             }
 
-            gl_tex = ofxNozzleCreateGLTextureFromIOSurface(
-                surface_ptr, new_width, new_height, gl_internal_format, gl_format, gl_type);
+            if (info.format == nozzle::texture_format::rgba16_unorm) {
+                IOSurfaceRef surface = static_cast<IOSurfaceRef>(surface_ptr);
+                IOReturn ret = IOSurfaceLock(surface, kIOSurfaceLockReadOnly, nullptr);
+                if (ret != kIOReturnSuccess) {
+                    ofLogError("ofxNozzleReceiver") << "IOSurfaceLock failed for rgba16_unorm conversion";
+                    return false;
+                }
+                const auto *src_base = static_cast<const uint16_t *>(IOSurfaceGetBaseAddress(surface));
+                uint32_t src_row_elements = IOSurfaceGetBytesPerRow(surface) / sizeof(uint16_t);
+                uint32_t w4 = static_cast<uint32_t>(new_width) * 4;
+                uint32_t h = static_cast<uint32_t>(new_height);
+
+                std::vector<uint32_t> widened(w4 * h);
+                for (uint32_t y = 0; y < h; ++y) {
+                    const uint16_t *src_row = src_base + y * src_row_elements;
+                    uint32_t *dst_row = widened.data() + y * w4;
+                    for (uint32_t i = 0; i < w4; ++i) {
+                        dst_row[i] = static_cast<uint32_t>(src_row[i]);
+                    }
+                }
+
+                IOSurfaceUnlock(surface, kIOSurfaceLockReadOnly, nullptr);
+
+                glGenTextures(1, &gl_tex);
+                glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gl_tex);
+                glTexImage2D(GL_TEXTURE_RECTANGLE_ARB, 0, GL_RGBA32UI,
+                             new_width, new_height, 0, GL_RGBA_INTEGER, GL_UNSIGNED_INT,
+                             widened.data());
+                glBindTexture(GL_TEXTURE_RECTANGLE_ARB, 0);
+            } else {
+                gl_tex = ofxNozzleCreateGLTextureFromIOSurface(
+                    surface_ptr, new_width, new_height, gl_internal_format, gl_format, gl_type);
+            }
             if (gl_tex == 0) {
                 ofLogError("ofxNozzleReceiver") << "failed to create GL texture from IOSurface";
                 return false;

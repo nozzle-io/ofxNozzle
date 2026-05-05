@@ -72,6 +72,8 @@ bool is_supported_gl_format(int gl_fmt) {
         case GL_R32F:
         case GL_RG32F:
         case GL_RGBA32F:
+        case GL_R32UI:
+        case GL_RGBA32UI:
             return true;
         default:
             return false;
@@ -91,6 +93,8 @@ nozzle::texture_format gl_format_to_nozzle(uint32_t gl_format) {
         case GL_R32F:          return nozzle::texture_format::r32_float;
         case GL_RG32F:         return nozzle::texture_format::rg32_float;
         case GL_RGBA32F:       return nozzle::texture_format::rgba32_float;
+        case GL_R32UI:         return nozzle::texture_format::r32_uint;
+        case GL_RGBA32UI:      return nozzle::texture_format::rgba32_uint;
         default:               return nozzle::texture_format::bgra8_unorm;
     }
 }

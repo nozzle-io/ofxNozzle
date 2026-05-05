@@ -157,14 +157,14 @@ struct ofxNozzleReceiver::Impl {
                 break;
             // 32-bit uint (IOSurface uses float FourCC; use float GL format for shader compat)
             case nozzle::texture_format::r32_uint:
-                gl_internal_format = GL_R32F;
-                gl_format = GL_RED;
-                gl_type = GL_FLOAT;
+                gl_internal_format = GL_R32UI;
+                gl_format = GL_RED_INTEGER;
+                gl_type = GL_UNSIGNED_INT;
                 break;
             case nozzle::texture_format::rgba32_uint:
-                gl_internal_format = GL_RGBA32F;
-                gl_format = GL_RGBA;
-                gl_type = GL_FLOAT;
+                gl_internal_format = GL_RGBA32UI;
+                gl_format = GL_RGBA_INTEGER;
+                gl_type = GL_UNSIGNED_INT;
                 break;
             // depth (no color mapping, fallback to BGRA8)
             case nozzle::texture_format::depth32_float:

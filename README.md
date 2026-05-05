@@ -154,11 +154,10 @@ The receiver maps nozzle formats to GL texture parameters for `CGLTexImageIOSurf
 | `r32_float` | `GL_R32F` | `GL_RED` | `GL_FLOAT` | |
 | `rg32_float` | `GL_RG32F` | `GL_RG` | `GL_FLOAT` | |
 | `rgba32_float` | `GL_RGBA32F` | `GL_RGBA` | `GL_FLOAT` | |
-| `r32_uint` | `GL_R32F` | `GL_RED` | `GL_FLOAT` | IOSurface uses float FourCC; reinterpreted as float |
-| `rgba32_uint` | `GL_RGBA32F` | `GL_RGBA` | `GL_FLOAT` | IOSurface uses float FourCC; reinterpreted as float |
-| `depth32_float` | `GL_RGBA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | No color mapping, fallback |
+| `r32_uint` | `GL_R32UI` | `GL_RED_INTEGER` | `GL_UNSIGNED_INT` | |
+| `rgba32_uint` | `GL_RGBA32UI` | `GL_RGBA_INTEGER` | `GL_UNSIGNED_INT` | |
 
-Uint formats are mapped to their float equivalents because the IOSurface FourCC is shared between uint and float layouts, and openFrameworks' default shader cannot sample integer textures.
+Integer textures require a custom shader with `usampler2D` / `texelFetch()` for correct sampling. The default openFrameworks shader will not render uint data correctly.
 
 ## Architecture
 

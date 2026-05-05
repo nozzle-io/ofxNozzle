@@ -130,6 +130,8 @@ The sender supports 14 GL internal formats:
 | `GL_R32F` | `r32_float` |
 | `GL_RG32F` | `rg32_float` |
 | `GL_RGBA32F` | `rgba32_float` |
+| `GL_R32UI` | `r32_uint` |
+| `GL_RGBA32UI` | `rgba32_uint` |
 
 Unsized formats (`GL_RGBA`, `GL_BGRA`, `GL_RGB`) and 3-channel formats (`GL_RGB8`) are normalized to their 4-channel RGBA equivalents automatically.
 
@@ -143,8 +145,8 @@ The receiver maps nozzle formats to GL texture parameters for `CGLTexImageIOSurf
 | `rg8_unorm` | `GL_RG8` | `GL_RG` | `GL_UNSIGNED_BYTE` | |
 | `rgba8_unorm` | `GL_RGBA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | Nozzle converts to BGRA internally |
 | `bgra8_unorm` | `GL_RGBA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | |
-| `rgba8_srgb` | `GL_SRGB8_ALPHA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | |
-| `bgra8_srgb` | `GL_SRGB8_ALPHA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | |
+| `rgba8_srgb` | `GL_RGBA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | CGL sRGB fallback to unorm |
+| `bgra8_srgb` | `GL_RGBA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | CGL sRGB fallback to unorm |
 | `r16_unorm` | `GL_R16` | `GL_RED` | `GL_UNSIGNED_SHORT` | |
 | `rg16_unorm` | `GL_RG16` | `GL_RG` | `GL_UNSIGNED_SHORT` | |
 | `rgba16_unorm` | `GL_RGBA16F` | `GL_RGBA` | `GL_HALF_FLOAT` | CGL has no GL_RGBA16, falls back to 16F |

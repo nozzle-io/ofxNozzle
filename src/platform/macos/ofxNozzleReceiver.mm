@@ -87,10 +87,11 @@ struct ofxNozzleReceiver::Impl {
                 gl_format = GL_BGRA;
                 gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
                 break;
-            // 8-bit sRGB (same IOSurface layout as BGRA, sRGB handled by GL)
+            // 8-bit sRGB (CGL does not support sRGB internal format with IOSurface,
+            // fallback to GL_RGBA8 — same byte layout, sRGB→linear conversion not applied)
             case nozzle::texture_format::rgba8_srgb:
             case nozzle::texture_format::bgra8_srgb:
-                gl_internal_format = GL_SRGB8_ALPHA8;
+                gl_internal_format = GL_RGBA8;
                 gl_format = GL_BGRA;
                 gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
                 break;

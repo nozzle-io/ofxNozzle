@@ -75,31 +75,99 @@ struct ofxNozzleReceiver::Impl {
         int new_width = static_cast<int>(info.width);
         int new_height = static_cast<int>(info.height);
 
-        uint32_t gl_internal_format = GL_BGRA8_EXT;
+        uint32_t gl_internal_format = GL_RGBA8;
         uint32_t gl_format = GL_BGRA;
         uint32_t gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
 
         switch (info.format) {
+            // 8-bit unorm (IOSurface is always BGRA for 8-bit on macOS)
             case nozzle::texture_format::rgba8_unorm:
-                gl_internal_format = GL_RGBA8;
-                gl_format = GL_RGBA;
-                gl_type = GL_UNSIGNED_BYTE;
-                break;
             case nozzle::texture_format::bgra8_unorm:
-                gl_internal_format = GL_BGRA8_EXT;
+                gl_internal_format = GL_RGBA8;
                 gl_format = GL_BGRA;
                 gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
+                break;
+            // 8-bit sRGB (same IOSurface layout as BGRA, sRGB handled by GL)
+            case nozzle::texture_format::rgba8_srgb:
+            case nozzle::texture_format::bgra8_srgb:
+                gl_internal_format = GL_SRGB8_ALPHA8;
+                gl_format = GL_BGRA;
+                gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
+                break;
+            // Single-channel 8-bit
+            case nozzle::texture_format::r8_unorm:
+                gl_internal_format = GL_R8;
+                gl_format = GL_RED;
+                gl_type = GL_UNSIGNED_BYTE;
+                break;
+            // Dual-channel 8-bit
+            case nozzle::texture_format::rg8_unorm:
+                gl_internal_format = GL_RG8;
+                gl_format = GL_RG;
+                gl_type = GL_UNSIGNED_BYTE;
+                break;
+            // 16-bit unorm single/dual
+            case nozzle::texture_format::r16_unorm:
+                gl_internal_format = GL_R16;
+                gl_format = GL_RED;
+                gl_type = GL_UNSIGNED_SHORT;
+                break;
+            case nozzle::texture_format::rg16_unorm:
+                gl_internal_format = GL_RG16;
+                gl_format = GL_RG;
+                gl_type = GL_UNSIGNED_SHORT;
+                break;
+            // 16-bit unorm RGBA (CGLTexImageIOSurface2D has no GL_RGBA16, fallback to half-float)
+            case nozzle::texture_format::rgba16_unorm:
+                gl_internal_format = GL_RGBA16F;
+                gl_format = GL_RGBA;
+                gl_type = GL_HALF_FLOAT;
+                break;
+            // 16-bit float
+            case nozzle::texture_format::r16_float:
+                gl_internal_format = GL_R16F;
+                gl_format = GL_RED;
+                gl_type = GL_HALF_FLOAT;
+                break;
+            case nozzle::texture_format::rg16_float:
+                gl_internal_format = GL_RG16F;
+                gl_format = GL_RG;
+                gl_type = GL_HALF_FLOAT;
                 break;
             case nozzle::texture_format::rgba16_float:
                 gl_internal_format = GL_RGBA16F;
                 gl_format = GL_RGBA;
                 gl_type = GL_HALF_FLOAT;
                 break;
+            // 32-bit float
+            case nozzle::texture_format::r32_float:
+                gl_internal_format = GL_R32F;
+                gl_format = GL_RED;
+                gl_type = GL_FLOAT;
+                break;
+            case nozzle::texture_format::rg32_float:
+                gl_internal_format = GL_RG32F;
+                gl_format = GL_RG;
+                gl_type = GL_FLOAT;
+                break;
             case nozzle::texture_format::rgba32_float:
                 gl_internal_format = GL_RGBA32F;
                 gl_format = GL_RGBA;
                 gl_type = GL_FLOAT;
                 break;
+            // 32-bit uint (IOSurface uses float FourCC; use float GL format for shader compat)
+            case nozzle::texture_format::r32_uint:
+                gl_internal_format = GL_R32F;
+                gl_format = GL_RED;
+                gl_type = GL_FLOAT;
+                break;
+            case nozzle::texture_format::rgba32_uint:
+                gl_internal_format = GL_RGBA32F;
+                gl_format = GL_RGBA;
+                gl_type = GL_FLOAT;
+                break;
+            // depth (no color mapping, fallback to BGRA8)
+            case nozzle::texture_format::depth32_float:
             default:
                 break;
         }
@@ -118,7 +186,7 @@ struct ofxNozzleReceiver::Impl {
             }
 
             gl_tex = ofxNozzleCreateGLTextureFromIOSurface(
-                surface_ptr, new_width, new_height, gl_internal_format);
+                surface_ptr, new_width, new_height, gl_internal_format, gl_format, gl_type);
             if (gl_tex == 0) {
                 ofLogError("ofxNozzleReceiver") << "failed to create GL texture from IOSurface";
                 return false;

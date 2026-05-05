@@ -133,7 +133,8 @@ ofxNozzleInteropResources ofxNozzleCreateIOSurface(
 }
 
 uint32_t ofxNozzleCreateGLTextureFromIOSurface(
-    void *io_surface, int width, int height, uint32_t gl_internal_format)
+    void *io_surface, int width, int height,
+    uint32_t gl_internal_format, uint32_t gl_format, uint32_t gl_type)
 {
     if (!io_surface) {
         ofLogError("ofxNozzleInterop") << "io_surface is null";
@@ -151,26 +152,10 @@ uint32_t ofxNozzleCreateGLTextureFromIOSurface(
 
     glBindTexture(GL_TEXTURE_RECTANGLE_ARB, gl_tex);
 
-    // CGLTexImageIOSurface2D does not accept GL_BGRA8_EXT as internal format.
-    // Use GL_RGBA8 for all 8-bit formats (BGRA channel ordering via GL_BGRA format).
-    GLenum gl_format = GL_BGRA;
-    GLenum gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
-    GLenum cgl_internal_format = GL_RGBA8;
-
-    if (gl_internal_format == GL_RGBA16F) {
-        gl_format = GL_RGBA;
-        gl_type = GL_HALF_FLOAT;
-        cgl_internal_format = GL_RGBA16F;
-    } else if (gl_internal_format == GL_RGBA32F) {
-        gl_format = GL_RGBA;
-        gl_type = GL_FLOAT;
-        cgl_internal_format = GL_RGBA32F;
-    }
-
     CGLError err = CGLTexImageIOSurface2D(
         CGLGetCurrentContext(),
         GL_TEXTURE_RECTANGLE_ARB,
-        cgl_internal_format,
+        gl_internal_format,
         static_cast<GLsizei>(width),
         static_cast<GLsizei>(height),
         gl_format,
@@ -183,7 +168,7 @@ uint32_t ofxNozzleCreateGLTextureFromIOSurface(
     if (err != kCGLNoError) {
         ofLogError("ofxNozzleInterop") << "CGLTexImageIOSurface2D failed: " << CGLErrorString(err)
             << " (code=" << std::dec << err << ")"
-            << " internal_format=0x" << std::hex << cgl_internal_format
+            << " internal_format=0x" << std::hex << gl_internal_format
             << " surface_pf=0x" << IOSurfaceGetPixelFormat(surface);
         glDeleteTextures(1, &gl_tex);
         return 0;

@@ -135,16 +135,30 @@ Unsized formats (`GL_RGBA`, `GL_BGRA`, `GL_RGB`) and 3-channel formats (`GL_RGB8
 
 ### Receiver GL Formats
 
-The receiver correctly handles 4 nozzle formats when creating GL textures:
+The receiver maps nozzle formats to GL texture parameters for `CGLTexImageIOSurface2D`:
 
-| nozzle format | GL Internal Format | GL Format | GL Type |
-|---------------|---------------------|-----------|---------|
-| `rgba8_unorm` | `GL_RGBA8` | `GL_RGBA` | `GL_UNSIGNED_BYTE` |
-| `bgra8_unorm` | `GL_BGRA8_EXT` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` |
-| `rgba16_float` | `GL_RGBA16F` | `GL_RGBA` | `GL_HALF_FLOAT` |
-| `rgba32_float` | `GL_RGBA32F` | `GL_RGBA` | `GL_FLOAT` |
+| nozzle format | GL Internal Format | GL Format | GL Type | Notes |
+|---------------|---------------------|-----------|---------|-------|
+| `r8_unorm` | `GL_R8` | `GL_RED` | `GL_UNSIGNED_BYTE` | |
+| `rg8_unorm` | `GL_RG8` | `GL_RG` | `GL_UNSIGNED_BYTE` | |
+| `rgba8_unorm` | `GL_RGBA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | Nozzle converts to BGRA internally |
+| `bgra8_unorm` | `GL_RGBA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | |
+| `rgba8_srgb` | `GL_SRGB8_ALPHA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | |
+| `bgra8_srgb` | `GL_SRGB8_ALPHA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | |
+| `r16_unorm` | `GL_R16` | `GL_RED` | `GL_UNSIGNED_SHORT` | |
+| `rg16_unorm` | `GL_RG16` | `GL_RG` | `GL_UNSIGNED_SHORT` | |
+| `rgba16_unorm` | `GL_RGBA16F` | `GL_RGBA` | `GL_HALF_FLOAT` | CGL has no GL_RGBA16, falls back to 16F |
+| `r16_float` | `GL_R16F` | `GL_RED` | `GL_HALF_FLOAT` | |
+| `rg16_float` | `GL_RG16F` | `GL_RG` | `GL_HALF_FLOAT` | |
+| `rgba16_float` | `GL_RGBA16F` | `GL_RGBA` | `GL_HALF_FLOAT` | |
+| `r32_float` | `GL_R32F` | `GL_RED` | `GL_FLOAT` | |
+| `rg32_float` | `GL_RG32F` | `GL_RG` | `GL_FLOAT` | |
+| `rgba32_float` | `GL_RGBA32F` | `GL_RGBA` | `GL_FLOAT` | |
+| `r32_uint` | `GL_R32F` | `GL_RED` | `GL_FLOAT` | IOSurface uses float FourCC; reinterpreted as float |
+| `rgba32_uint` | `GL_RGBA32F` | `GL_RGBA` | `GL_FLOAT` | IOSurface uses float FourCC; reinterpreted as float |
+| `depth32_float` | `GL_RGBA8` | `GL_BGRA` | `GL_UNSIGNED_INT_8_8_8_8_REV` | No color mapping, fallback |
 
-Other formats received from senders will fall back to `GL_BGRA8_EXT`, which may produce incorrect rendering.
+Uint formats are mapped to their float equivalents because the IOSurface FourCC is shared between uint and float layouts, and openFrameworks' default shader cannot sample integer textures.
 
 ## Architecture
 

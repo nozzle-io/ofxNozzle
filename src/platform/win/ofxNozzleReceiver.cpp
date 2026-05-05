@@ -51,41 +51,94 @@ struct ofxNozzleReceiver::Impl {
 
     static uint32_t format_bytes_per_pixel(nozzle::texture_format fmt) {
         switch (fmt) {
-            case nozzle::texture_format::rgba16_float:
-            case nozzle::texture_format::rg32_float:
-                return 8;
-            case nozzle::texture_format::rgba32_float:
-            case nozzle::texture_format::rgba32_uint:
-                return 16;
-            case nozzle::texture_format::r32_float:
-            case nozzle::texture_format::r32_uint:
-                return 4;
-            default:
-                return 4;
+            case nozzle::texture_format::r8_unorm:     return 1;
+            case nozzle::texture_format::rg8_unorm:    return 2;
+            case nozzle::texture_format::r16_unorm:    return 2;
+            case nozzle::texture_format::rg16_unorm:   return 4;
+            case nozzle::texture_format::r16_float:    return 2;
+            case nozzle::texture_format::rg16_float:   return 4;
+            case nozzle::texture_format::r32_float:    return 4;
+            case nozzle::texture_format::rg32_float:   return 8;
+            case nozzle::texture_format::r32_uint:     return 4;
+            case nozzle::texture_format::rgba8_unorm:  return 4;
+            case nozzle::texture_format::bgra8_unorm:  return 4;
+            case nozzle::texture_format::rgba8_srgb:   return 4;
+            case nozzle::texture_format::bgra8_srgb:   return 4;
+            case nozzle::texture_format::rgba16_unorm: return 8;
+            case nozzle::texture_format::rgba16_float: return 8;
+            case nozzle::texture_format::rgba32_float: return 16;
+            case nozzle::texture_format::rgba32_uint:  return 16;
+            case nozzle::texture_format::depth32_float: return 4;
+            default: return 4;
         }
     }
 
     static GLenum nozzle_format_to_gl_internal(nozzle::texture_format fmt) {
         switch (fmt) {
+            case nozzle::texture_format::r8_unorm:     return GL_R8;
+            case nozzle::texture_format::rg8_unorm:    return GL_RG8;
+            case nozzle::texture_format::r16_unorm:    return GL_R16;
+            case nozzle::texture_format::rg16_unorm:   return GL_RG16;
+            case nozzle::texture_format::r16_float:    return GL_R16F;
+            case nozzle::texture_format::rg16_float:   return GL_RG16F;
+            case nozzle::texture_format::r32_float:    return GL_R32F;
+            case nozzle::texture_format::rg32_float:   return GL_RG32F;
+            case nozzle::texture_format::r32_uint:     return GL_R32UI;
             case nozzle::texture_format::rgba8_unorm:  return GL_RGBA8;
             case nozzle::texture_format::bgra8_unorm:  return GL_BGRA8_EXT;
+            case nozzle::texture_format::rgba8_srgb:   return GL_RGBA8;
+            case nozzle::texture_format::bgra8_srgb:   return GL_BGRA8_EXT;
+            case nozzle::texture_format::rgba16_unorm: return GL_RGBA16;
             case nozzle::texture_format::rgba16_float: return GL_RGBA16F;
+            case nozzle::texture_format::rgba32_float: return GL_RGBA32F;
+            case nozzle::texture_format::rgba32_uint:  return GL_RGBA32UI;
+            case nozzle::texture_format::depth32_float: return GL_R32F;
             default: return GL_BGRA8_EXT;
         }
     }
 
     static GLenum nozzle_format_to_gl_format(nozzle::texture_format fmt) {
         switch (fmt) {
-            case nozzle::texture_format::rgba8_unorm:  return GL_RGBA;
-            case nozzle::texture_format::rgba16_float: return GL_RGBA;
-            default: return GL_BGRA;
+            case nozzle::texture_format::r8_unorm:
+            case nozzle::texture_format::r16_unorm:
+            case nozzle::texture_format::r16_float:
+            case nozzle::texture_format::r32_float:
+            case nozzle::texture_format::r32_uint:
+            case nozzle::texture_format::depth32_float:
+                return GL_RED;
+            case nozzle::texture_format::rg8_unorm:
+            case nozzle::texture_format::rg16_unorm:
+            case nozzle::texture_format::rg16_float:
+            case nozzle::texture_format::rg32_float:
+                return GL_RG;
+            case nozzle::texture_format::bgra8_unorm:
+            case nozzle::texture_format::bgra8_srgb:
+                return GL_BGRA;
+            default:
+                return GL_RGBA;
         }
     }
 
     static GLenum nozzle_format_to_gl_type(nozzle::texture_format fmt) {
         switch (fmt) {
-            case nozzle::texture_format::rgba16_float: return GL_HALF_FLOAT;
-            default: return GL_UNSIGNED_BYTE;
+            case nozzle::texture_format::r16_unorm:
+            case nozzle::texture_format::rg16_unorm:
+            case nozzle::texture_format::rgba16_unorm:
+                return GL_UNSIGNED_SHORT;
+            case nozzle::texture_format::r16_float:
+            case nozzle::texture_format::rg16_float:
+            case nozzle::texture_format::rgba16_float:
+                return GL_HALF_FLOAT;
+            case nozzle::texture_format::r32_float:
+            case nozzle::texture_format::rg32_float:
+            case nozzle::texture_format::rgba32_float:
+            case nozzle::texture_format::depth32_float:
+                return GL_FLOAT;
+            case nozzle::texture_format::r32_uint:
+            case nozzle::texture_format::rgba32_uint:
+                return GL_UNSIGNED_INT;
+            default:
+                return GL_UNSIGNED_BYTE;
         }
     }
 

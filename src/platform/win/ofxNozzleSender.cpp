@@ -111,17 +111,22 @@ uint32_t gl_format_bytes_per_pixel(uint32_t gl_format) {
 
 uint32_t nozzle_format_to_dxgi(nozzle::texture_format fmt) {
     switch (fmt) {
-        case nozzle::texture_format::r8_unorm:       return 61;  // DXGI_FORMAT_R8_UNORM
-        case nozzle::texture_format::rg8_unorm:       return 49;  // DXGI_FORMAT_R8G8_UNORM
-        case nozzle::texture_format::bgra8_unorm:     return 87;  // DXGI_FORMAT_B8G8R8A8_UNORM
-        case nozzle::texture_format::rgba8_unorm:     return 28;  // DXGI_FORMAT_R8G8B8A8_UNORM
-        case nozzle::texture_format::r16_float:       return 56;  // DXGI_FORMAT_R16_FLOAT
-        case nozzle::texture_format::rg16_float:      return 34;  // DXGI_FORMAT_R16G16_FLOAT
-        case nozzle::texture_format::rgba16_float:    return 10;  // DXGI_FORMAT_R16G16B16A16_FLOAT
-        case nozzle::texture_format::r32_float:       return 41;  // DXGI_FORMAT_R32_FLOAT
-        case nozzle::texture_format::rg32_float:      return 16;  // DXGI_FORMAT_R32G32_FLOAT
-        case nozzle::texture_format::rgba32_float:    return 2;   // DXGI_FORMAT_R32G32B32A32_FLOAT
-        default: return 87;  // DXGI_FORMAT_B8G8R8A8_UNORM
+        case nozzle::texture_format::r8_unorm:       return DXGI_FORMAT_R8_UNORM;
+        case nozzle::texture_format::rg8_unorm:       return DXGI_FORMAT_R8G8_UNORM;
+        case nozzle::texture_format::bgra8_unorm:     return DXGI_FORMAT_B8G8R8A8_UNORM;
+        case nozzle::texture_format::rgba8_unorm:     return DXGI_FORMAT_R8G8B8A8_UNORM;
+        case nozzle::texture_format::rgba8_srgb:      return DXGI_FORMAT_R8G8B8A8_UNORM;
+        case nozzle::texture_format::bgra8_srgb:      return DXGI_FORMAT_B8G8R8A8_UNORM;
+        case nozzle::texture_format::r16_float:       return DXGI_FORMAT_R16_FLOAT;
+        case nozzle::texture_format::rg16_float:      return DXGI_FORMAT_R16G16_FLOAT;
+        case nozzle::texture_format::rgba16_float:    return DXGI_FORMAT_R16G16B16A16_FLOAT;
+        case nozzle::texture_format::r32_float:       return DXGI_FORMAT_R32_FLOAT;
+        case nozzle::texture_format::rg32_float:      return DXGI_FORMAT_R32G32_FLOAT;
+        case nozzle::texture_format::rgba32_float:    return DXGI_FORMAT_R32G32B32A32_FLOAT;
+        case nozzle::texture_format::r32_uint:        return DXGI_FORMAT_R32_UINT;
+        case nozzle::texture_format::rgba32_uint:     return DXGI_FORMAT_R32G32B32A32_UINT;
+        case nozzle::texture_format::depth32_float:   return DXGI_FORMAT_R32_FLOAT;
+        default: return DXGI_FORMAT_B8G8R8A8_UNORM;
     }
 }
 

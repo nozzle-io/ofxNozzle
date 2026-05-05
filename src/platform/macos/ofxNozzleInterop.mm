@@ -13,6 +13,8 @@
 
 #include "ofxNozzleInterop.h"
 
+#include <nozzle/nozzle_c.h>
+
 #include "ofLog.h"
 
 static constexpr uint32_t kIOSurfaceAlignBytes = 64;
@@ -48,36 +50,36 @@ static bool gl_internal_format_to_iosurface_pixel_format(
 }
 
 static MTLPixelFormat nozzle_format_to_mtl(uint32_t nozzle_pixel_format) {
-    switch (static_cast<uint32_t>(nozzle_pixel_format)) {
-        case 1:  return MTLPixelFormatR8Unorm;          // r8_unorm
-        case 2:  return MTLPixelFormatRG8Unorm;         // rg8_unorm
-        case 3:  return MTLPixelFormatRGBA8Unorm;       // rgba8_unorm
-        case 4:  return MTLPixelFormatBGRA8Unorm;       // bgra8_unorm
-        case 5:  return MTLPixelFormatRGBA8Unorm_sRGB;  // rgba8_srgb
-        case 6:  return MTLPixelFormatBGRA8Unorm_sRGB;  // bgra8_srgb
-        case 7:  return MTLPixelFormatR16Unorm;         // r16_unorm
-        case 8:  return MTLPixelFormatRG16Unorm;        // rg16_unorm
-        case 9:  return MTLPixelFormatRGBA16Unorm;      // rgba16_unorm
-        case 10: return MTLPixelFormatR16Float;         // r16_float
-        case 11: return MTLPixelFormatRG16Float;        // rg16_float
-        case 12: return MTLPixelFormatRGBA16Float;      // rgba16_float
-        case 13: return MTLPixelFormatR32Float;         // r32_float
-        case 14: return MTLPixelFormatRG32Float;        // rg32_float
-        case 15: return MTLPixelFormatRGBA32Float;      // rgba32_float
-        case 16: return MTLPixelFormatR32Uint;          // r32_uint
-        case 17: return MTLPixelFormatRGBA32Uint;       // rgba32_uint
-        case 18: return MTLPixelFormatDepth32Float;     // depth32_float
+    switch (nozzle_pixel_format) {
+        case NOZZLE_FORMAT_R8_UNORM:      return MTLPixelFormatR8Unorm;
+        case NOZZLE_FORMAT_RG8_UNORM:     return MTLPixelFormatRG8Unorm;
+        case NOZZLE_FORMAT_RGBA8_UNORM:   return MTLPixelFormatRGBA8Unorm;
+        case NOZZLE_FORMAT_BGRA8_UNORM:   return MTLPixelFormatBGRA8Unorm;
+        case NOZZLE_FORMAT_RGBA8_SRGB:    return MTLPixelFormatRGBA8Unorm_sRGB;
+        case NOZZLE_FORMAT_BGRA8_SRGB:    return MTLPixelFormatBGRA8Unorm_sRGB;
+        case NOZZLE_FORMAT_R16_UNORM:     return MTLPixelFormatR16Unorm;
+        case NOZZLE_FORMAT_RG16_UNORM:    return MTLPixelFormatRG16Unorm;
+        case NOZZLE_FORMAT_RGBA16_UNORM:  return MTLPixelFormatRGBA16Unorm;
+        case NOZZLE_FORMAT_R16_FLOAT:     return MTLPixelFormatR16Float;
+        case NOZZLE_FORMAT_RG16_FLOAT:    return MTLPixelFormatRG16Float;
+        case NOZZLE_FORMAT_RGBA16_FLOAT:  return MTLPixelFormatRGBA16Float;
+        case NOZZLE_FORMAT_R32_FLOAT:     return MTLPixelFormatR32Float;
+        case NOZZLE_FORMAT_RG32_FLOAT:    return MTLPixelFormatRG32Float;
+        case NOZZLE_FORMAT_RGBA32_FLOAT:  return MTLPixelFormatRGBA32Float;
+        case NOZZLE_FORMAT_R32_UINT:      return MTLPixelFormatR32Uint;
+        case NOZZLE_FORMAT_RGBA32_UINT:   return MTLPixelFormatRGBA32Uint;
+        case NOZZLE_FORMAT_DEPTH32_FLOAT: return MTLPixelFormatDepth32Float;
         default: return MTLPixelFormatInvalid;
     }
 }
 
 static uint32_t gl_format_to_nozzle_format(uint32_t gl_internal_format) {
     switch (gl_internal_format) {
-        case GL_BGRA8_EXT: return 4; // bgra8_unorm
-        case GL_RGBA8:     return 3; // rgba8_unorm
-        case GL_RGBA16F:   return 12; // rgba16_float
-        case GL_RGBA32F:   return 15; // rgba32_float
-        default:           return 3; // fallback to rgba8_unorm
+        case GL_BGRA8_EXT: return NOZZLE_FORMAT_BGRA8_UNORM;
+        case GL_RGBA8:     return NOZZLE_FORMAT_RGBA8_UNORM;
+        case GL_RGBA16F:   return NOZZLE_FORMAT_RGBA16_FLOAT;
+        case GL_RGBA32F:   return NOZZLE_FORMAT_RGBA32_FLOAT;
+        default:           return NOZZLE_FORMAT_RGBA8_UNORM;
     }
 }
 

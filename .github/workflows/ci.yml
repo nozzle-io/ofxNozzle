@@ -101,6 +101,20 @@ jobs:
             echo "No existing release for ${GITHUB_REF_NAME}; upload may create it."
           fi
 
+      - name: Delete old latest release assets
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view latest --repo "${GITHUB_REPOSITORY}" --json assets --jq '.assets[].name' > latest-assets.txt 2>/dev/null; then
+            while IFS= read -r asset; do
+              [ -n "$asset" ] || continue
+              gh release delete-asset latest "$asset" --yes --repo "${GITHUB_REPOSITORY}"
+            done < latest-assets.txt
+          else
+            echo "No existing latest release assets to delete"
+          fi
+
       - name: Upload latest development snapshot
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         uses: softprops/action-gh-release@v2

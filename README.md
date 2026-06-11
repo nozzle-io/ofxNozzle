@@ -137,7 +137,7 @@ Unsized formats (`GL_RGBA`, `GL_BGRA`, `GL_RGB`) and 3-channel formats (`GL_RGB8
 
 ### Receiver GL Formats
 
-The receiver maps nozzle formats to GL texture parameters for `CGLTexImageIOSurface2D`:
+The receiver maps nozzle formats to platform GL texture parameters. On Linux the normal receiver path binds the EGLImage imported by nozzle core from DMA-BUF metadata; the CPU upload path is an explicit fallback only:
 
 | nozzle format | GL Internal Format | GL Format | GL Type | Notes |
 |---------------|---------------------|-----------|---------|-------|
@@ -173,7 +173,8 @@ Sender flow:
 Receiver flow:
   macOS:   nozzle acquire_frame → IOSurface → CGLTexImageIOSurface2D → cached GL texture → ofTexture
   Windows: nozzle acquire_frame → D3D11 texture → glTexSubImage2D → cached GL texture → ofTexture
-  Linux:   nozzle acquire_frame → DMA-BUF mmap → glTexSubImage2D → cached GL texture → ofTexture
+  Linux:   nozzle acquire_frame → DMA-BUF EGLImage → glEGLImageTargetTexture2DOES → cached GL texture → ofTexture
+           fallback only: DMA-BUF mmap → glTexSubImage2D; logs as CPU fallback and ignores modifiers
 ```
 
 ## Requirements

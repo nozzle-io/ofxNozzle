@@ -1,4 +1,4 @@
-// ofxNozzleReceiver_linux.cpp - Linux: nozzle frame → DMA-BUF mmap → CPU → GL texture → ofTexture
+// ofxNozzleReceiver_linux.cpp - Linux: nozzle DMA-BUF EGLImage → GL texture; explicit CPU fallback only
 
 #include "ofMain.h"
 
@@ -8,9 +8,28 @@
 #include <nozzle/backends/linux.hpp>
 #include "ofLog.h"
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include <vector>
+
+using gl_egl_image_target_texture_2d_oes_proc = void (*)(GLenum target, void *image);
+
+namespace {
+
+gl_egl_image_target_texture_2d_oes_proc load_gl_egl_image_target_texture() {
+    static gl_egl_image_target_texture_2d_oes_proc fn = nullptr;
+    static bool loaded{false};
+    if (!loaded) {
+        loaded = true;
+        fn = reinterpret_cast<gl_egl_image_target_texture_2d_oes_proc>(
+            eglGetProcAddress("glEGLImageTargetTexture2DOES"));
+    }
+    return fn;
+}
+
+} // namespace
 
 struct ofxNozzleReceiver::Impl {
     std::string sender_name_{};
@@ -25,6 +44,9 @@ struct ofxNozzleReceiver::Impl {
     int current_width_{0};
     int current_height_{0};
     uint32_t current_bpp_{4};
+    nozzle::texture_format current_format_{nozzle::texture_format::unknown};
+    enum class texture_storage_mode { none, egl_image, cpu_upload };
+    texture_storage_mode current_storage_mode_{texture_storage_mode::none};
 
     ~Impl() {
         close();
@@ -43,6 +65,12 @@ struct ofxNozzleReceiver::Impl {
             glDeleteTextures(1, &gl_texture_);
             gl_texture_ = 0;
         }
+
+        current_width_ = 0;
+        current_height_ = 0;
+        current_bpp_ = 4;
+        current_format_ = nozzle::texture_format::unknown;
+        current_storage_mode_ = texture_storage_mode::none;
 
         receiver_ = nozzle::receiver{};
     }
@@ -140,14 +168,121 @@ struct ofxNozzleReceiver::Impl {
         }
     }
 
-    bool update_texture_from_frame(const nozzle::frame &frame) {
+    bool bind_egl_image_texture(const nozzle::frame &frame) {
+        const auto &tex = frame.get_texture();
+        const auto &info = frame.info();
+        const auto connected = receiver_.connected_info();
+
+        // The core DMA-BUF receiver imports the fd as an EGLImage using the
+        // registry-provided DRM fourcc, modifier, stride, and offset metadata.
+        // ofxNozzle must bind that imported image instead of deriving row
+        // layout with lseek/mmap as its primary path.
+
+        void *egl_image = nozzle::dma_buf::get_egl_image(tex);
+        if (!egl_image) {
+            ofLogWarning("ofxNozzleReceiver")
+                << "DMA-BUF EGLImage missing; falling back to CPU upload";
+            return false;
+        }
+
+        if (connected.native_format_kind !=
+            static_cast<uint8_t>(nozzle::native_format_kind::drm_fourcc)) {
+            ofLogWarning("ofxNozzleReceiver")
+                << "sender does not expose DRM fourcc metadata; falling back to CPU upload";
+            return false;
+        }
+
+        if (connected.plane_count < 1 || 4 < connected.plane_count) {
+            ofLogWarning("ofxNozzleReceiver")
+                << "sender exposes invalid DMA-BUF plane metadata; falling back to CPU upload";
+            return false;
+        }
+
+        for (uint32_t plane_index = 0; plane_index < connected.plane_count; ++plane_index) {
+            if (connected.plane_strides[plane_index] == 0) {
+                ofLogWarning("ofxNozzleReceiver")
+                    << "sender exposes zero DMA-BUF stride metadata; falling back to CPU upload";
+                return false;
+            }
+        }
+
+        auto gl_egl_image_target_texture = load_gl_egl_image_target_texture();
+        if (!gl_egl_image_target_texture) {
+            ofLogWarning("ofxNozzleReceiver")
+                << "glEGLImageTargetTexture2DOES unavailable; falling back to CPU upload";
+            return false;
+        }
+
+        int new_width = static_cast<int>(info.width);
+        int new_height = static_cast<int>(info.height);
+        uint32_t bpp = format_bytes_per_pixel(info.format);
+        GLenum gl_internal = nozzle_format_to_gl_internal(info.format);
+
+        bool needs_recreate = (gl_texture_ == 0 ||
+                               current_storage_mode_ != texture_storage_mode::egl_image ||
+                               current_width_ != new_width ||
+                               current_height_ != new_height ||
+                               current_bpp_ != bpp ||
+                               current_format_ != info.format);
+
+        if (needs_recreate) {
+            if (gl_texture_ != 0) {
+                glDeleteTextures(1, &gl_texture_);
+                gl_texture_ = 0;
+            }
+
+            glGenTextures(1, &gl_texture_);
+            if (gl_texture_ == 0) {
+                ofLogError("ofxNozzleReceiver") << "failed to create GL texture for DMA-BUF import";
+                return false;
+            }
+
+            texture_.clear();
+            texture_.setUseExternalTextureID(gl_texture_);
+            auto &td = texture_.texData;
+            td.textureTarget = GL_TEXTURE_2D;
+            td.width = static_cast<float>(new_width);
+            td.height = static_cast<float>(new_height);
+            td.tex_w = static_cast<float>(new_width);
+            td.tex_h = static_cast<float>(new_height);
+            td.glInternalFormat = gl_internal;
+            texture_.setTextureWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+            texture_.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
+        }
+
+        glBindTexture(GL_TEXTURE_2D, gl_texture_);
+        gl_egl_image_target_texture(GL_TEXTURE_2D, egl_image);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        GLenum error = glGetError();
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        if (error != GL_NO_ERROR) {
+            ofLogWarning("ofxNozzleReceiver")
+                << "binding DMA-BUF EGLImage to GL texture failed: 0x"
+                << std::hex << error << "; falling back to CPU upload";
+            current_storage_mode_ = texture_storage_mode::none;
+            current_format_ = nozzle::texture_format::unknown;
+            return false;
+        }
+
+        current_width_ = new_width;
+        current_height_ = new_height;
+        current_bpp_ = bpp;
+        current_format_ = info.format;
+        current_storage_mode_ = texture_storage_mode::egl_image;
+
+        return true;
+    }
+
+    bool update_texture_from_cpu_fallback(const nozzle::frame &frame) {
         const auto &tex = frame.get_texture();
         const auto &info = frame.info();
 
-        if (!tex.valid()) {
-            ofLogError("ofxNozzleReceiver") << "frame has invalid texture";
-            return false;
-        }
+        ofLogWarning("ofxNozzleReceiver")
+            << "using explicit CPU DMA-BUF fallback; this path ignores modifiers and is not zero-copy";
 
         int new_width = static_cast<int>(info.width);
         int new_height = static_cast<int>(info.height);
@@ -161,7 +296,7 @@ struct ofxNozzleReceiver::Impl {
         off_t dmabuf_size = lseek(dmabuf_fd, 0, SEEK_END);
         lseek(dmabuf_fd, 0, SEEK_SET);
         if (dmabuf_size <= 0) {
-            ofLogError("ofxNozzleReceiver") << "failed to get DMA-BUF size";
+            ofLogError("ofxNozzleReceiver") << "failed to get DMA-BUF size for CPU fallback";
             return false;
         }
 
@@ -173,7 +308,7 @@ struct ofxNozzleReceiver::Impl {
         void *mapped = mmap(nullptr, static_cast<size_t>(dmabuf_size),
                              PROT_READ, MAP_SHARED, dmabuf_fd, 0);
         if (mapped == MAP_FAILED) {
-            ofLogError("ofxNozzleReceiver") << "mmap DMA-BUF failed";
+            ofLogError("ofxNozzleReceiver") << "mmap DMA-BUF failed in CPU fallback";
             return false;
         }
 
@@ -182,9 +317,11 @@ struct ofxNozzleReceiver::Impl {
         GLenum gl_type = nozzle_format_to_gl_type(info.format);
 
         bool needs_recreate = (gl_texture_ == 0 ||
+                               current_storage_mode_ != texture_storage_mode::cpu_upload ||
                                current_width_ != new_width ||
                                current_height_ != new_height ||
-                               current_bpp_ != bpp);
+                               current_bpp_ != bpp ||
+                               current_format_ != info.format);
 
         if (needs_recreate) {
             if (gl_texture_ != 0) {
@@ -218,6 +355,8 @@ struct ofxNozzleReceiver::Impl {
             current_width_ = new_width;
             current_height_ = new_height;
             current_bpp_ = bpp;
+            current_format_ = info.format;
+            current_storage_mode_ = texture_storage_mode::cpu_upload;
         }
 
         glBindTexture(GL_TEXTURE_2D, gl_texture_);
@@ -237,6 +376,21 @@ struct ofxNozzleReceiver::Impl {
         munmap(mapped, static_cast<size_t>(dmabuf_size));
 
         return true;
+    }
+
+    bool update_texture_from_frame(const nozzle::frame &frame) {
+        const auto &tex = frame.get_texture();
+
+        if (!tex.valid()) {
+            ofLogError("ofxNozzleReceiver") << "frame has invalid texture";
+            return false;
+        }
+
+        if (bind_egl_image_texture(frame)) {
+            return true;
+        }
+
+        return update_texture_from_cpu_fallback(frame);
     }
 };
 

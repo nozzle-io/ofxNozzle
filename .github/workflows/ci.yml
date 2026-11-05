@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   test:
-    uses: 2bbb/of-actions/.github/workflows/build-addon.yml@main
+    uses: 2bbb/of-actions/.github/workflows/build-addon.yml@20327259bb7d69d8fca33d6458cf9d1a1397e55b
     with:
       of_version: "0.12.1"
       addon_name: "ofxNozzle"

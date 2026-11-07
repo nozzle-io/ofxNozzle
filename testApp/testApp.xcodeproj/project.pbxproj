@@ -96,13 +96,6 @@
 			"path": "ofxUnitTests",
 			"sourceTree": "<group>"
 		},
-		"4783283F-6BC2-47EF-B756-D236C19450D3": {
-			"fileEncoding": "4",
-			"isa": "PBXFileReference",
-			"lastKnownFileType": "sourcecode.cpp.objcpp",
-			"name": "metal_sync.mm",
-			"sourceTree": "<group>"
-		},
 		"4CBFD9B2-284E-422A-8516-3723CC9B8DED": {
 			"fileEncoding": "4",
 			"isa": "PBXFileReference",
@@ -216,13 +209,6 @@
 			"name": "ofxNozzleReceiver.mm",
 			"sourceTree": "<group>"
 		},
-		"A9B19EF4-5059-4D81-86F9-C237564B93DD": {
-			"fileEncoding": "4",
-			"isa": "PBXFileReference",
-			"lastKnownFileType": "sourcecode.cpp.objcpp",
-			"name": "metal_sync.mm",
-			"sourceTree": "<group>"
-		},
 		"BA4DFD4D-1882-461B-8528-352DAEE64F34": {
 			"fileEncoding": "4",
 			"isa": "PBXFileReference",
@@ -256,10 +242,6 @@
 			"path": "include",
 			"sourceTree": "<group>"
 		},
-		"C2904E35-044F-4FC4-B990-45C0149C09E5": {
-			"fileRef": "4783283F-6BC2-47EF-B756-D236C19450D3",
-			"isa": "PBXBuildFile"
-		},
 		"C4050EA2-0BD0-40DF-A811-62F554F7E405": {
 			"children": [
 				"CE7211E9-68A5-4EA9-AFD7-D12C9459531A"
@@ -274,8 +256,6 @@
 				"BA4DFD4D-1882-461B-8528-352DAEE64F34",
 				"8D7BAFBE-617A-4555-9FC7-4F577A23AF12",
 				"F620C204-D37F-473A-AAEB-292D72A00F6E",
-				"A9B19EF4-5059-4D81-86F9-C237564B93DD",
-				"4783283F-6BC2-47EF-B756-D236C19450D3",
 				"4D29D592-2D9A-4397-980A-2801351767C6",
 				"68E65BE5-E417-4477-98DB-E4BB15C6D179"
 			],
@@ -317,10 +297,6 @@
 			"lastKnownFileType": "sourcecode.cpp.h",
 			"name": "nozzle_c.h",
 			"sourceTree": "<group>"
-		},
-		"CF8DF2C0-282A-43A9-A07A-52D6BDF3D047": {
-			"fileRef": "A9B19EF4-5059-4D81-86F9-C237564B93DD",
-			"isa": "PBXBuildFile"
 		},
 		"D065A454-00D2-4D23-874B-E991BCE8C816": {
 			"fileEncoding": "4",
@@ -483,8 +459,6 @@
 				"E4B69E210A3A1BDC003C02F2",
 				"F3C1C185-2F02-4449-84FA-1E47B441EFC8",
 				"2F83DB78-7BB2-44E9-937B-78E6D9328387",
-				"CF8DF2C0-282A-43A9-A07A-52D6BDF3D047",
-				"C2904E35-044F-4FC4-B990-45C0149C09E5",
 				"7C71C6A4-C329-47A7-9F2C-37B4425A1B9E",
 				"615D7E4B-CC46-4AC9-A147-10A3C62C43E1",
 				"D3ECCB8C-177C-44FB-BEF3-3D6B5632A75B",

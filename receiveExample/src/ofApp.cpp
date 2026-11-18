@@ -9,7 +9,8 @@ void ofApp::setup() {
 void ofApp::draw() {
     ofBackground(0);
 
-    if (receiver.receive()) {
+    receiver.update();
+    if (receiver.isConnected() && receiver.getTexture().isAllocated()) {
         receiver.draw(0, 0, ofGetWidth(), ofGetHeight());
 
         if (readback_mode) {
@@ -27,7 +28,7 @@ void ofApp::draw() {
     y += 20;
 
     if (readback_mode) {
-        ofDrawBitmapString("[READBACK ON] sampling every 60 frames", 20, y);
+        ofDrawBitmapString("[READBACK ON] sampling every 60 draws", 20, y);
     } else {
         ofDrawBitmapString("press 'r' to toggle readback", 20, y);
     }

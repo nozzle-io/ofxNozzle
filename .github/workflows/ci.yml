@@ -24,8 +24,27 @@ jobs:
       cache_key_suffix: "v2"
       preprocessor_defines: "NOZZLE_PLATFORM_WINDOWS=1;NOZZLE_HAS_D3D11=1;NOZZLE_HAS_OPENGL=1"
 
+  receive-example:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: of_root/addons/ofxNozzle
+          submodules: recursive
+
+      - name: Install openFrameworks 0.12.1 for macOS
+        run: |
+          curl --fail --location --silent --show-error \
+            https://github.com/openframeworks/openFrameworks/releases/download/0.12.1/of_v0.12.1_osx_release.tar.gz \
+            --output "$RUNNER_TEMP/openFrameworks.tar.gz"
+          tar -xzf "$RUNNER_TEMP/openFrameworks.tar.gz" -C of_root --strip-components=1
+
+      - name: Build receiveExample
+        working-directory: of_root/addons/ofxNozzle/receiveExample
+        run: make -j"$(sysctl -n hw.ncpu)" Release
+
   package:
-    needs: [test]
+    needs: [test, receive-example]
     runs-on: ubuntu-latest
     permissions:
       contents: write
